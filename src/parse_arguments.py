@@ -51,6 +51,12 @@ def parse_arguments():
         required=False
     )
 
+    parser.add_argument(
+        '--blastn',
+        help='path to blastn executable',
+        required=False
+    )
+
     # Misc
 
     parser.add_argument(
@@ -158,6 +164,15 @@ def _configure_oarsman_dependencies(command_line_args):
         else:
             oarsman_dependencies.seqkit_fpath = 'seqkit'
         # end if
+    # end if
+
+    # Set blastn executable path (optional, has a default value)
+    oarsman_dependencies.blastn_fpath = 'blastn' # it must be in PATH
+
+    # So, we will search for blastn in environment variables
+    blastn_in_path = util_is_in_path(oarsman_dependencies.blastn_fpath)
+    if not blastn_in_path:
+        errors.append('Cannot find blastn executable in the PATH environment variable')
     # end if
 
     return oarsman_dependencies, errors

@@ -1,5 +1,6 @@
 
 import os
+import re
 
 
 def _file_does_not_exist(fpath):
@@ -31,4 +32,23 @@ def util_is_in_path(util_name):
     # end for
 
     return util_found
-# end def util_is_in_path 
+# end def util_is_in_path
+
+
+def rm_fasta_extention(fpath):
+
+    fasta_extention_pattern = r'^.+(\.fa(sta)?)$'
+    extention_match = re.match(fasta_extention_pattern, fpath)
+
+    if not extention_match is None:
+        fasta_extention = extention_match.group(1)
+        new_fpath = os.path.basename(fpath).replace(fasta_extention, '')
+    else:
+        new_fpath = os.path.basename(fpath)
+    # end if
+
+    return os.path.join(
+        os.path.dirname(new_fpath),
+        new_fpath
+    )
+# end def rm_fasta_extention

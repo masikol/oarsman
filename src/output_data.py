@@ -7,3 +7,11 @@ class MakeAmpliconsOutput:
     # end __init__
 # end class MakeAmpliconsOutput
 
+
+class MakeDbOutput:
+
+    def __init__(self, db_fpath):
+        self.db_fpath = db_fpath
+    # end __init__
+# end class MakeAmpliconsOutput
+

@@ -22,11 +22,17 @@ class OarsmanArguments:
             os.path.join(self.tmp_dir_path, 'reference_amplicons', 'reference_amplicons'),
             self.min_amplicon_len
         )
-
     # end def get_make_amplicons_args
 
-# end class OarsmanArguments
+    def get_make_db_args(self, input_seqs_fpath):
 
+        return MakeDbArguments(
+            input_seqs_fpath,
+            os.path.join(self.tmp_dir_path, 'db_for_kromsatel')
+        )
+    # end def get_make_db_args
+
+# end class OarsmanArguments
 
 
 class MakeAmpliconsArguments:
@@ -45,3 +51,17 @@ class MakeAmpliconsArguments:
         self.min_amplicon_len = min_amplicon_len
     # end def __init__
 # end class MakeAmpliconsArguments
+
+
+class MakeDbArguments:
+
+    def __init__(
+        self,
+        amplicons_seqs_fpath,
+        db_dir_path
+    ):
+
+        self.amplicons_seqs_fpath = amplicons_seqs_fpath
+        self.db_dir_path = db_dir_path
+    # end def __init__
+# end class MakeDbArguments
