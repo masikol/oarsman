@@ -1,4 +1,5 @@
 
+import sys
 import os
 import subprocess as sp
 
@@ -6,7 +7,7 @@ from src.oarsman_arguments import KromsatelArguments
 from src.oarsman_dependencies import KromsatelDependencies
 from src.output_data import KromsatelOutput
 
-from src.filesystem import rm_fastq_extention, gzip_file, rm_file
+from src.filesystem import rm_fastq_extention, gzip_file, rm_file, check_files_exist
 
 
 def _configure_kromsatel_command(
@@ -113,6 +114,19 @@ def run_kromsatel(args, dependencies):
 
     forward_output_read_fpath = cleaned_reads_fpaths[0]
     reverse_output_read_fpath = cleaned_reads_fpaths[1]
+
+    # Check if all output files exist
+    non_extant_fpaths = check_files_exist(
+        forward_output_read_fpath,
+        reverse_output_read_fpath
+    )
+    if len(non_extant_fpaths) != 0:
+        for i, fpath in enumerate(non_extant_fpaths):
+            print(f'\nError #{i+1}: file `{fpath}` does not exist after `kromsatel.py` sctipt has ended.')
+            print('This file is the output of the script kromsatel.py, so it must exist.')
+        # end for
+        sys.exit(1)
+    # end if
 
     return KromsatelOutput(
         forward_output_read_fpath,

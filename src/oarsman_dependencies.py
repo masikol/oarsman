@@ -28,7 +28,6 @@ class OarsmanDependencies:
             os.path.join(self.kromsatel_dirpath, 'db-scripts', 'make-db.sh'),
             self.makeblastdb_fpath
         )
-
     # end def get_make_db_dependencies
 
     def get_kromsatel_dependencies(self):
@@ -37,8 +36,14 @@ class OarsmanDependencies:
             os.path.join(self.kromsatel_dirpath, 'kromsatel.py'),
             self.blastn_fpath
         )
-
     # end def get_kromsatel_dependencies
+
+    def get_pair_dependencies(self):
+
+        return PairDependencies(
+            self.seqkit_fpath
+        )
+    # end def get_pair_dependencies
 
 # end class OarsmanArguments
 
@@ -83,3 +88,15 @@ class KromsatelDependencies:
         self.blastn_fpath = blastn_fpath
     # end def __init__
 # end class KromsatelDependencies
+
+
+class PairDependencies:
+
+    def __init__(
+        self,
+        seqkit_fpath
+    ):
+
+        self.seqkit_fpath = seqkit_fpath
+    # end def __init__
+# end class PairDependencies

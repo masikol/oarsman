@@ -116,3 +116,17 @@ class KromsatelArguments:
         self.n_threads = n_threads
     # end def __init__
 # end class KromsatelArguments
+
+
+class PairArguments:
+
+    def __init__(
+        self,
+        reads_R1_fpath,
+        reads_R2_fpath
+    ):
+
+        self.reads_R1_fpath = reads_R1_fpath
+        self.reads_R2_fpath = reads_R2_fpath
+    # end def __init__
+# end class PairArguments

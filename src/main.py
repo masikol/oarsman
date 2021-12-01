@@ -18,6 +18,12 @@ from src.oarsman_arguments import KromsatelArguments
 from src.oarsman_dependencies import KromsatelDependencies
 from src.output_data import KromsatelOutput
 
+from src.runners.pair_runner import run_pair
+from src.oarsman_arguments import PairArguments
+from src.oarsman_dependencies import PairDependencies
+from src.output_data import PairOutput
+
+
 def main():
 
     # Parse command line arguments
@@ -53,11 +59,12 @@ def main():
 
     print(make_db_output_data.db_fpath)
 
+
     # From this moment we will iterate over samples
 
     n_samples = len(oarsman_args.reads_R1_fpaths)
     for i_sample in range(n_samples):
-        print(f'Doing sample {i_sample+1}...')
+        print(f'  \n|=== Doing sample #{i_sample+1}... ===|\n')
 
         # Run kromsatel
         kromsatel_arguments: KromsatelArguments = oarsman_args.get_kromsatel_args(
@@ -73,5 +80,23 @@ def main():
 
         print(kromsatel_output.reads_R1_fpath)
         print(kromsatel_output.reads_R2_fpath)
+
+
+        # Pair cleaned reads -- they are shuffled
+        pair_arguments: PairArguments = PairArguments(
+            kromsatel_output.reads_R1_fpath,
+            kromsatel_output.reads_R2_fpath
+        )
+        pair_dependencies: PairDependencies = oarsman_dependencies.get_pair_dependencies()
+
+        pair_output: PairOutput = run_pair(pair_arguments, pair_dependencies)
+
+        print(
+            pair_output.reads_R1_paired_fpath,
+            pair_output.reads_R2_paired_fpath,
+            pair_output.reads_R1_unpaired_fpath,
+            pair_output.reads_R2_unpaired_fpath
+        )
+
     # end for
 # end def main

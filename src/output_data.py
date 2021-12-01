@@ -24,3 +24,17 @@ class KromsatelOutput:
     # end __init__
 # end class KromsatelOutput
 
+
+class PairOutput:
+
+    def __init__(
+        self,
+        reads_R1_paired_fpath, reads_R2_paired_fpath,
+        reads_R1_unpaired_fpath, reads_R2_unpaired_fpath
+    ):
+        self.reads_R1_paired_fpath = reads_R1_paired_fpath
+        self.reads_R2_paired_fpath = reads_R2_paired_fpath
+        self.reads_R1_unpaired_fpath = reads_R1_unpaired_fpath
+        self.reads_R2_unpaired_fpath = reads_R2_unpaired_fpath
+    # end __init__
+# end class PairOutput
