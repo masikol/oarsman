@@ -44,6 +44,9 @@ def run_make_db(args: MakeDbArguments, dependencies: MakeDbDependencies):
         sys.exit(1)
     # end if
 
+    # Print an empty line after makeblastdb output
+    print()
+
     db_path = os.path.join(
         args.db_dir_path,
         os.path.basename(rm_fasta_extention(args.amplicons_seqs_fpath))

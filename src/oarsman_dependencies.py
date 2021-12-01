@@ -9,7 +9,8 @@ class OarsmanDependencies:
         # Dependencies for kromsatel and co
         self.kromsatel_dirpath = None
         self.seqkit_fpath = None
-        self.blastn_fpath = None
+        self.blastn_fpath = 'blastn' # it must be in PATH
+        self.makeblastdb_fpath = 'makeblastdb' # it must be in PATH
     # end def __init__
 
     def get_make_amplicons_dependencies(self):
@@ -25,10 +26,19 @@ class OarsmanDependencies:
 
         return MakeDbDependencies(
             os.path.join(self.kromsatel_dirpath, 'db-scripts', 'make-db.sh'),
-            self.blastn_fpath
+            self.makeblastdb_fpath
         )
 
     # end def get_make_db_dependencies
+
+    def get_kromsatel_dependencies(self):
+
+        return KromsatelDependencies(
+            os.path.join(self.kromsatel_dirpath, 'kromsatel.py'),
+            self.blastn_fpath
+        )
+
+    # end def get_kromsatel_dependencies
 
 # end class OarsmanArguments
 
@@ -37,8 +47,8 @@ class MakeAmpliconsDependencies:
 
     def __init__(
         self,
-        make_amplicons_fpath= None,
-        seqkit_fpath='seqkit'
+        make_amplicons_fpath,
+        seqkit_fpath
     ):
 
         self.make_amplicons_fpath = make_amplicons_fpath
@@ -51,11 +61,25 @@ class MakeDbDependencies:
 
     def __init__(
         self,
-        make_db_path= None,
-        blastn_fpath='blastn'
+        make_db_path,
+        makeblastdb_fpath
     ):
 
         self.make_db_path = make_db_path
-        self.blastn_fpath = blastn_fpath
+        self.makeblastdb_fpath = makeblastdb_fpath
     # end def __init__
 # end class MakeDbDependencies
+
+
+class KromsatelDependencies:
+
+    def __init__(
+        self,
+        kromsatel_fpath,
+        blastn_fpath
+    ):
+
+        self.kromsatel_fpath = kromsatel_fpath
+        self.blastn_fpath = blastn_fpath
+    # end def __init__
+# end class KromsatelDependencies

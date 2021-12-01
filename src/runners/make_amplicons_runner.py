@@ -23,7 +23,7 @@ def _configure_make_amplicons_command(
             f'-g {args.ref_genome_seq_fpath}',
             f'-o {args.prefix}',
             f'-s {dependencies.seqkit_fpath}',
-            f'-i {args.min_amplicon_len}',
+            f'-i {args.min_minor_len}',
         ]
     )
 
@@ -46,6 +46,9 @@ def run_make_amplicons(args: MakeAmpliconsArguments, dependencies: MakeAmplicons
         print(stdout_stderr[stderr_index].decode('utf-8'))
         sys.exit(1)
     # end if
+
+    # Print an empty line after the output of the script
+    print()
 
     no_primers_fpath = args.prefix + '.fasta'
     with_primers_fpath = args.prefix + '_with-primers.fasta'
