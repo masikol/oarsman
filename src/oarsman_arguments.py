@@ -1,6 +1,8 @@
 
 import os
 
+from src.filesystem import rm_fasta_extention
+
 class OarsmanArguments:
 
     def __init__(self):
@@ -55,6 +57,26 @@ class OarsmanArguments:
             self.n_threads
         )
     # end def get_kromsatel_args
+
+    def get_read_mapping_args(self, reads_R1_fpath, reads_R2_fpath, unpaired_reads_fpaths):
+
+        ref_genome_basename = os.path.basename(self.ref_genome_seq_fpath)
+
+        index_base_fpath = os.path.join(
+            os.path.dirname(self.ref_genome_seq_fpath),
+            rm_fasta_extention(ref_genome_basename) + 'index'
+        )
+
+        return ReadMappingArguments(
+            reads_R1_fpath,
+            reads_R2_fpath,
+            unpaired_reads_fpaths,
+            self.ref_genome_seq_fpath,
+            index_base_fpath,
+            os.path.join(self.tmp_dir_path, 'read_mappings'),
+            self.n_threads
+        )
+    # end def get_read_mapping_args
 # end class OarsmanArguments
 
 
@@ -130,3 +152,27 @@ class PairArguments:
         self.reads_R2_fpath = reads_R2_fpath
     # end def __init__
 # end class PairArguments
+
+
+class ReadMappingArguments:
+
+    def __init__(
+        self,
+        reads_R1_fpath,
+        reads_R2_fpath,
+        unpaired_reads_fpaths,
+        ref_genome_fpath,
+        genome_index_base_fpath,
+        outdir_path,
+        n_threads
+    ):
+
+        self.reads_R1_fpath = reads_R1_fpath
+        self.reads_R2_fpath = reads_R2_fpath
+        self.unpaired_reads_fpaths = unpaired_reads_fpaths
+        self.ref_genome_fpath = ref_genome_fpath
+        self.genome_index_base_fpath = genome_index_base_fpath
+        self.outdir_path = outdir_path
+        self.n_threads = n_threads
+    # end def __init__
+# end class ReadMappingArguments

@@ -63,9 +63,7 @@ def run_pair(args, dependencies):
     # Check if all output files exist
     non_extant_fpaths = check_files_exist(
         paired_R1_fpath,
-        paired_R2_fpath,
-        unpaired_R1_fpath,
-        unpaired_R2_fpath
+        paired_R2_fpath
     )
     if len(non_extant_fpaths) != 0:
         for i, fpath in enumerate(non_extant_fpaths):
@@ -75,10 +73,17 @@ def run_pair(args, dependencies):
         sys.exit(1)
     # end if
 
+    # Add non-empty unpaired files
+    unpaired_reads_fpaths = list()
+    for unpaired_fpath in (unpaired_R1_fpath, unpaired_R2_fpath):
+        if os.path.exists(unpaired_fpath) and os.path.getsize(unpaired_fpath) > 0:
+            unpaired_reads_fpaths.append(unpaired_fpath)
+        # end if
+    # end for
+
     return PairOutput(
         paired_R1_fpath,
         paired_R2_fpath,
-        unpaired_R1_fpath,
-        unpaired_R2_fpath
+        unpaired_reads_fpaths
     )
 # end def run_pair

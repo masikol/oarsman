@@ -82,8 +82,14 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        '--blastn',
-        help='path to blastn executable',
+        '--bowtie2',
+        help='path to bowtie2 executable',
+        required=False
+    )
+
+    parser.add_argument(
+        '--samtools',
+        help='path to samtools executable',
         required=False
     )
 
@@ -318,13 +324,14 @@ def _configure_oarsman_dependencies(command_line_args):
         errors.append(f'Directory `{oarsman_dependencies.kromsatel_dirpath}` does not exist')
     # end if
 
+
     # Set seqkit executable path (optional, has a default value)
     oarsman_dependencies.seqkit_fpath = command_line_args.seqkit
 
     if not oarsman_dependencies.seqkit_fpath is None:
         # This block will be run if a path to seqkit executable is specified in the command line
         if not os.path.exists(oarsman_dependencies.seqkit_fpath):
-            errors.append('Cannot find seqkit executable in the PATH environment variable')
+            errors.append(f'File `{oarsman_dependencies.seqkit_fpath}` does not exist')
         elif not os.access(oarsman_dependencies.seqkit_fpath, os.X_OK):
             errors.append(f"""seqkit file `{oarsman_dependencies.seqkit_fpath}` is not executable
     (please change permissions for it)""")
@@ -337,6 +344,60 @@ def _configure_oarsman_dependencies(command_line_args):
             errors.append('Cannot find seqkit executable in the PATH environment variable')
         else:
             oarsman_dependencies.seqkit_fpath = 'seqkit'
+        # end if
+    # end if
+
+
+    # Set bowtie2 executable path (optional, has a default value)
+    oarsman_dependencies.bowtie2_fpath = command_line_args.bowtie2
+
+    if not oarsman_dependencies.bowtie2_fpath is None:
+        # This block will be run if a path to bowtie2 executable is specified in the command line
+        bowtie2_binaries = (
+            oarsman_dependencies.bowtie2_fpath,
+            oarsman_dependencies.bowtie2_fpath+'-build'
+        )
+        for util_fpath in bowtie2_binaries:
+            if not os.path.exists(util_fpath):
+                errors.append(f'File `{util_fpath}` does not exist')
+            elif not os.access(util_fpath, os.X_OK):
+                errors.append(f"""File `{util_fpath}` is not executable
+        (please change permissions for it)""")
+            # end if
+        # end for
+    else:
+        # This block will be run if a path to bowtie2 executable is not specified in the command line
+        # So, we will search for it in environment variables
+        for util_name in ('bowtie2', 'bowtie2-build'):
+            util_in_path = util_is_in_path(util_name)
+            if not util_in_path:
+                errors.append(f'Cannot find {util_name} executable in the PATH environment variable')
+            else:
+                oarsman_dependencies.bowtie2_fpath = 'bowtie2'
+            # end if
+        # end for
+    # end if
+
+
+    # Set samtools executable path (optional, has a default value)
+    oarsman_dependencies.samtools_fpath = command_line_args.samtools
+
+    if not oarsman_dependencies.samtools_fpath is None:
+        # This block will be run if a path to samtools executable is specified in the command line
+        if not os.path.exists(oarsman_dependencies.samtools_fpath):
+            errors.append(f'File `{oarsman_dependencies.seqkit_fpath}` does not exist')
+        elif not os.access(oarsman_dependencies.samtools_fpath, os.X_OK):
+            errors.append(f"""samtools file `{oarsman_dependencies.samtools_fpath}` is not executable
+    (please change permissions for it)""")
+        # end if
+    else:
+        # This block will be run if a path to samtools executable is not specified in the command line
+        # So, we will search for it in environment variables
+        samtools_in_path = util_is_in_path('samtools')
+        if not samtools_in_path:
+            errors.append('Cannot find samtools executable in the PATH environment variable')
+        else:
+            oarsman_dependencies.samtools_fpath = 'samtools'
         # end if
     # end if
 

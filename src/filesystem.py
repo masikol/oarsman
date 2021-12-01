@@ -27,9 +27,11 @@ def util_is_in_path(util_name):
     util_found = False
 
     for dir_from_path in os.environ['PATH'].split(os.pathsep):
-        if util_name in os.listdir(dir_from_path):
-            util_found = True
-            break
+        if os.path.isdir(dir_from_path):
+            if util_name in os.listdir(dir_from_path):
+                util_found = True
+                break
+            # end if
         # end if
     # end for
 

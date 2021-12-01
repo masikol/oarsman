@@ -11,6 +11,8 @@ class OarsmanDependencies:
         self.seqkit_fpath = None
         self.blastn_fpath = 'blastn' # it must be in PATH
         self.makeblastdb_fpath = 'makeblastdb' # it must be in PATH
+        self.bowtie2_fpath = None
+        self.samtools_fpath = None
     # end def __init__
 
     def get_make_amplicons_dependencies(self):
@@ -42,6 +44,15 @@ class OarsmanDependencies:
 
         return PairDependencies(
             self.seqkit_fpath
+        )
+    # end def get_pair_dependencies
+
+    def get_bowtie2_dependencies(self):
+
+        return Bowtie2Dependencies(
+            self.bowtie2_fpath,
+            self.bowtie2_fpath + '-build',
+            self.samtools_fpath
         )
     # end def get_pair_dependencies
 
@@ -100,3 +111,18 @@ class PairDependencies:
         self.seqkit_fpath = seqkit_fpath
     # end def __init__
 # end class PairDependencies
+
+
+class Bowtie2Dependencies:
+
+    def __init__(
+        self,
+        bowtie2_fpath,
+        bowtie2_build_fpath,
+        samtools_fpath
+    ):
+
+        self.bowtie2_fpath = bowtie2_fpath
+        self.bowtie2_build_fpath = bowtie2_build_fpath
+        self.samtools_fpath = samtools_fpath
+# end class Bowtie2Dependencies

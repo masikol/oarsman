@@ -23,6 +23,8 @@ from src.oarsman_arguments import PairArguments
 from src.oarsman_dependencies import PairDependencies
 from src.output_data import PairOutput
 
+from src.runners.bowtie2_runner import run_bowtie2
+
 
 def main():
 
@@ -94,9 +96,17 @@ def main():
         print(
             pair_output.reads_R1_paired_fpath,
             pair_output.reads_R2_paired_fpath,
-            pair_output.reads_R1_unpaired_fpath,
-            pair_output.reads_R2_unpaired_fpath
+            pair_output.unpaired_reads_fpaths
         )
+
+        read_map_args = oarsman_args.get_read_mapping_args(
+            pair_output.reads_R1_paired_fpath,
+            pair_output.reads_R2_paired_fpath,
+            pair_output.unpaired_reads_fpaths
+        )
+        read_map_dependencies = oarsman_dependencies.get_bowtie2_dependencies()
+
+        read_mapping_output = run_bowtie2(read_map_args, read_map_dependencies)
 
     # end for
 # end def main
