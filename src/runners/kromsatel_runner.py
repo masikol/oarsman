@@ -113,12 +113,21 @@ def run_kromsatel(args, dependencies):
     # end for
 
     forward_output_read_fpath = cleaned_reads_fpaths[0]
-    reverse_output_read_fpath = cleaned_reads_fpaths[1]
+    if len(cleaned_reads_fpaths) > 1:
+        reverse_output_read_fpath = cleaned_reads_fpaths[1]
+    else:
+        reverse_output_read_fpath = None
+    # end if
 
     # Check if all output files exist
+    fpaths_to_check = tuple(
+        filter(
+            lambda x: not x is None,
+            (forward_output_read_fpath, reverse_output_read_fpath)
+        )
+    )
     non_extant_fpaths = check_files_exist(
-        forward_output_read_fpath,
-        reverse_output_read_fpath
+        *fpaths_to_check
     )
     if len(non_extant_fpaths) != 0:
         for i, fpath in enumerate(non_extant_fpaths):

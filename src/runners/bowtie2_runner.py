@@ -19,7 +19,7 @@ def _configure_bow1tie2_build_command(
         [
             dependencies.bowtie2_build_fpath,
             args.ref_genome_fpath,
-            args.genome_index_base_fpath
+            args.genome_index_base_fpath,
         ]
     )
 
@@ -33,6 +33,9 @@ def _configure_bow1tie2_command(
         sam_outfpath: str
     ):
 
+    forw_reads_option = '' if args.reads_R1_fpath is None else f'-1 {args.reads_R1_fpath}'
+    revr_reads_option = '' if args.reads_R2_fpath is None else f'-2 {args.reads_R2_fpath}'
+
     unpaired_options = ' '.join(
         map(
             lambda s: f'-U {s}',
@@ -44,11 +47,11 @@ def _configure_bow1tie2_command(
         [
             dependencies.bowtie2_fpath,
             f'-x {args.genome_index_base_fpath}',
-            f'-1 {args.reads_R1_fpath}',
-            f'-2 {args.reads_R2_fpath}',
+            forw_reads_option,
+            revr_reads_option,
             unpaired_options,
-            f'--threads {args.n_threads}'
-            f'-S {sam_outfpath}'
+            f'--threads {args.n_threads}',
+            f'-S {sam_outfpath}',
         ]
     )
 
@@ -70,7 +73,7 @@ def _configure_sam2bam_command(
             f'-@ {args.n_threads}',
             f'-T {args.ref_genome_fpath}',
             f'-o {bam_fpath}',
-            sam_fpath
+            sam_fpath,
         ]
     )
 
@@ -91,7 +94,7 @@ def _configure_sort_bam_command(
             '-O BAM',
             f'-@ {args.n_threads}',
             f'-o {sorted_bam_fpath}',
-            bam_fpath
+            bam_fpath,
         ]
     )
 
@@ -110,7 +113,7 @@ def _configure_index_bam_command(
             dependencies.samtools_fpath, 'index',
             '-b',
             f'-@ {args.n_threads}',
-            sorted_bam_fpath
+            sorted_bam_fpath,
         ]
     )
 
@@ -129,22 +132,17 @@ def run_bowtie2(args, dependencies):
             sys.exit(1)
         # end try
 
-
-    sample_name = os.path.basename(
-        rm_fastq_extention(args.reads_R1_fpath)
-    )
-
     sam_outfpath = os.path.join(
         args.outdir_path,
-        sample_name + '.sam'
+        args.sample_name + '.sam'
     )
     bam_outfpath = os.path.join(
         args.outdir_path,
-        sample_name + '.bam'
+        args.sample_name + '.bam'
     )
     sorted_bam_outfpath = os.path.join(
         args.outdir_path,
-        sample_name + '.sorted.bam'
+        args.sample_name + '.sorted.bam'
     )
 
     # Create index of reference fasta file
@@ -163,11 +161,22 @@ def run_bowtie2(args, dependencies):
         sys.exit(1)
     # end if
 
+    fasta_index_extention = '.fai'
+    ref_genome_index_fpath = args.ref_genome_fpath + fasta_index_extention
+
+    if not os.path.exists(ref_genome_index_fpath):
+        print(f"""\nError: the index file `{ref_genome_index_fpath}`
+    of the genome sequence file `{args.ref_genome_fpath}` does not exist after indexing""")
+        print('This file must exist, though. Exitting...')
+        sys.exit(1)
+    # end if
+
 
     # Perform mapping
     command_str = _configure_bow1tie2_command(args, dependencies, sam_outfpath)
 
     print('Mapping the reads...')
+    print(command_str)
     pipe = sp.Popen(command_str, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
     stdout_stderr = pipe.communicate()
 
@@ -177,6 +186,12 @@ def run_bowtie2(args, dependencies):
         print('Error message:')
         stderr_index = 1
         print(stdout_stderr[stderr_index].decode('utf-8'))
+        sys.exit(1)
+    # end if
+
+    if not os.path.exists(sam_outfpath):
+        print(f'\nError: SAM file `{sam_outfpath}` does not exist after bowtie2 has mapped the reads')
+        print('This file must exist, though. Exitting...')
         sys.exit(1)
     # end if
 
@@ -200,6 +215,12 @@ def run_bowtie2(args, dependencies):
     # end if
     rm_file(sam_outfpath)
 
+    if not os.path.exists(bam_outfpath):
+        print(f'\nError: BAM file `{bam_outfpath}` does not exist after SAM->BAM conversion')
+        print('This file must exist, though. Exitting...')
+        sys.exit(1)
+    # end if
+
 
     # Sort BAM file
     command_str = _configure_sort_bam_command(args, dependencies, bam_outfpath, sorted_bam_outfpath)
@@ -220,6 +241,12 @@ def run_bowtie2(args, dependencies):
     # end if
     rm_file(bam_outfpath)
 
+    if not os.path.exists(sorted_bam_outfpath):
+        print(f'\nError: sorted BAM file `{sorted_bam_outfpath}` does not exist after BAM sorting')
+        print('This file must exist, though. Exitting...')
+        sys.exit(1)
+    # end if
+
 
     # Index BAM file
     command_str = _configure_index_bam_command(args, dependencies, sorted_bam_outfpath)
@@ -236,6 +263,16 @@ def run_bowtie2(args, dependencies):
         print('Error message:')
         stderr_index = 1
         print(stdout_stderr[stderr_index].decode('utf-8'))
+        sys.exit(1)
+    # end if
+
+    bam_index_extention = '.bai'
+    sorted_bam_index_fpath = sorted_bam_outfpath + bam_index_extention
+
+    if not os.path.exists(sorted_bam_outfpath):
+        print(f"""\nError: index file `{sorted_bam_index_fpath}`
+    of the sorted BAM file `{sorted_bam_outfpath}` does not exist after indexing""")
+        print('This file must exist, though. Exitting...')
         sys.exit(1)
     # end if
 

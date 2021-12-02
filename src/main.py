@@ -2,6 +2,7 @@
 import sys
 
 from src.parse_arguments import parse_arguments
+from src.seq_sample import fastq_fpath_to_sample_name
 
 from src.runners.make_amplicons_runner import run_make_amplicons
 from src.oarsman_arguments import MakeAmpliconsArguments
@@ -66,7 +67,12 @@ def main():
 
     n_samples = len(oarsman_args.reads_R1_fpaths)
     for i_sample in range(n_samples):
-        print(f'  \n|=== Doing sample #{i_sample+1}... ===|\n')
+
+        sample_name = fastq_fpath_to_sample_name(
+            oarsman_args.reads_R1_fpaths[0][0]
+        )
+
+        print(f'  \n|=== Processing sample #{i_sample+1}/{n_samples}: {sample_name} ===|\n')
 
         # Run kromsatel
         kromsatel_arguments: KromsatelArguments = oarsman_args.get_kromsatel_args(
@@ -80,26 +86,33 @@ def main():
             kromsatel_dependencies
         )
 
-        print(kromsatel_output.reads_R1_fpath)
-        print(kromsatel_output.reads_R2_fpath)
+        if not kromsatel_output.reads_R2_fpath is None:
+            # After kromsatel paired reads are shuffled and now have to be matched up together
 
+            pair_arguments: PairArguments = PairArguments(
+                kromsatel_output.reads_R1_fpath,
+                kromsatel_output.reads_R2_fpath
+            )
+            pair_dependencies: PairDependencies = oarsman_dependencies.get_pair_dependencies()
 
-        # Pair cleaned reads -- they are shuffled
-        pair_arguments: PairArguments = PairArguments(
-            kromsatel_output.reads_R1_fpath,
-            kromsatel_output.reads_R2_fpath
-        )
-        pair_dependencies: PairDependencies = oarsman_dependencies.get_pair_dependencies()
+            pair_output: PairOutput = run_pair(pair_arguments, pair_dependencies)
 
-        pair_output: PairOutput = run_pair(pair_arguments, pair_dependencies)
-
-        print(
-            pair_output.reads_R1_paired_fpath,
-            pair_output.reads_R2_paired_fpath,
-            pair_output.unpaired_reads_fpaths
-        )
+            print(
+                pair_output.reads_R1_paired_fpath,
+                pair_output.reads_R2_paired_fpath,
+                pair_output.unpaired_reads_fpaths
+            )
+        else:
+            # If we have unpaired data, "forward" reads will be processed as unpaired from now
+            pair_output: PairOutput = PairOutput(
+                None,
+                None,
+                [kromsatel_output.reads_R1_fpath]
+            )
+        # end if
 
         read_map_args = oarsman_args.get_read_mapping_args(
+            sample_name,
             pair_output.reads_R1_paired_fpath,
             pair_output.reads_R2_paired_fpath,
             pair_output.unpaired_reads_fpaths

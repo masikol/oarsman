@@ -45,9 +45,18 @@ class OarsmanArguments:
     # end def get_make_db_args
 
     def get_kromsatel_args(self, i_sample, db_dir_path):
+
+        unpaired_data = len(self.reads_R2_fpaths) == 0
+
+        if unpaired_data:
+            reads_R2_fpaths = list()
+        else:
+            reads_R2_fpaths = self.reads_R2_fpaths[i_sample]
+        # end if
+
         return KromsatelArguments(
             self.reads_R1_fpaths[i_sample],
-            self.reads_R2_fpaths[i_sample],
+            reads_R2_fpaths,
             self.primers_fpath,
             db_dir_path,
             os.path.join(self.tmp_dir_path, 'kromsatel_outdir'),
@@ -58,7 +67,13 @@ class OarsmanArguments:
         )
     # end def get_kromsatel_args
 
-    def get_read_mapping_args(self, reads_R1_fpath, reads_R2_fpath, unpaired_reads_fpaths):
+    def get_read_mapping_args(
+        self,
+        sample_name,
+        reads_R1_fpath,
+        reads_R2_fpath,
+        unpaired_reads_fpaths
+    ):
 
         ref_genome_basename = os.path.basename(self.ref_genome_seq_fpath)
 
@@ -68,6 +83,7 @@ class OarsmanArguments:
         )
 
         return ReadMappingArguments(
+            sample_name,
             reads_R1_fpath,
             reads_R2_fpath,
             unpaired_reads_fpaths,
@@ -158,6 +174,7 @@ class ReadMappingArguments:
 
     def __init__(
         self,
+        sample_name,
         reads_R1_fpath,
         reads_R2_fpath,
         unpaired_reads_fpaths,
@@ -167,6 +184,7 @@ class ReadMappingArguments:
         n_threads
     ):
 
+        self.sample_name = sample_name
         self.reads_R1_fpath = reads_R1_fpath
         self.reads_R2_fpath = reads_R2_fpath
         self.unpaired_reads_fpaths = unpaired_reads_fpaths
