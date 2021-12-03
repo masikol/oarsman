@@ -29,6 +29,11 @@ from src.oarsman_arguments import ReadMappingArguments
 from src.oarsman_dependencies import Bowtie2Dependencies
 from src.output_data import ReadMappingOutput
 
+from src.runners.aln_preprocess_runner import run_aln_preprocess
+from src.oarsman_arguments import AlnPreprocessArguments
+from src.oarsman_dependencies import SamtoolsDependencies
+from src.output_data import AlnPreprocessOutput
+
 from src.runners.bcftools_var_call_runner import run_bcftools_var_call
 from src.oarsman_arguments import CallVariantsArguments
 from src.oarsman_dependencies import BcfVarCallDependencies
@@ -95,6 +100,7 @@ def main():
             kromsatel_dependencies
         )
 
+        # Match up paired reads
         if not kromsatel_output.reads_R2_fpath is None:
             # After kromsatel paired reads are shuffled and now have to be matched up together
 
@@ -120,6 +126,7 @@ def main():
             )
         # end if
 
+
         # Map the reads
         read_map_args = oarsman_args.get_read_mapping_args(
             sample_name,
@@ -134,10 +141,24 @@ def main():
             read_map_dependencies
         )
 
+
+        # Preprocess alignment data
+        aln_preproc_args = oarsman_args.get_aln_preprocess_args(
+            sample_name,
+            read_mapping_output.alignment_fpath
+        )
+        aln_preproc_dependencies = oarsman_dependencies.get_samtools_dependencies()
+
+        aln_preproces_output = run_aln_preprocess(
+            aln_preproc_args,
+            aln_preproc_dependencies
+        )
+
+
         # Call variants
         var_call_args: CallVariantsArguments = oarsman_args.get_var_call_args(
             sample_name,
-            read_mapping_output.alignment_fpath
+            aln_preproces_output.preproc_aln_fpath
         )
         var_call_dependencies: BcfVarCallDependencies = oarsman_dependencies.get_bcftools_dependencies()
 

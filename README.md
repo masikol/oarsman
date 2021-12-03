@@ -1,6 +1,6 @@
 # oarsman
 
-Oarsman (**O**verlapping **A**mplicons **R**eference) is a pipeline for obtaining consensus genome sequences from overlapping amplicon data using a reference genome sequence.
+Oarsman (**O**verlapping **A**mplicons, **R**eference) is a pipeline for obtaining consensus genome sequences from overlapping amplicon data using a reference genome sequence.
 
 ## Description
 

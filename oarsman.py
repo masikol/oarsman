@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '1.0.a'
+__version__ = '0.0.a'
 __last_update_date__ = '2021-12-XX'
 # __author__ = 'Maxim Sikolenko'
 
@@ -27,7 +27,7 @@ if sys.version_info.major + sys.version_info.minor * 0.1 < (3.5 - 1e-9):
 
 import os
 
-print(f'\n== {os.path.basename(__file__)} v{__version__} ==\n')
+print(f'\n  |=== {os.path.basename(__file__)} v{__version__} ===|\n')
 
 from src.main import main
 

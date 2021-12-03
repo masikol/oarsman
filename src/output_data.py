@@ -46,6 +46,13 @@ class ReadMappingOutput:
 # end class ReadMappingOutput
 
 
+class AlnPreprocessOutput:
+    def __init__(self, preproc_aln_fpath):
+        self.preproc_aln_fpath = preproc_aln_fpath
+    # end def __init__
+# end class AlnPreprocessOutput
+
+
 class VariantCallingOutput:
     def __init__(self, consensus_fpath):
         self.consensus_fpath = consensus_fpath

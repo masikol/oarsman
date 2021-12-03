@@ -34,6 +34,7 @@ def _configure_make_amplicons_command(
 def run_make_amplicons(args: MakeAmpliconsArguments, dependencies: MakeAmpliconsDependencies):
 
     command_str = _configure_make_amplicons_command(args, dependencies)
+    print()
 
     pipe = sp.Popen(command_str, shell=True, stderr=sp.PIPE)
     stdout_stderr = pipe.communicate()

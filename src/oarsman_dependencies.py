@@ -56,15 +56,19 @@ class OarsmanDependencies:
 
         return Bowtie2Dependencies(
             self.bowtie2_fpath,
-            self.bowtie2_fpath + '-build',
-            self.samtools_fpath
+            self.bowtie2_fpath + '-build'
         )
     # end def get_pair_dependencies
+
+    def get_samtools_dependencies(self):
+        return SamtoolsDependencies(
+            self.samtools_fpath
+        )
+    # end def get_samtools_dependencies
 
     def get_bcftools_dependencies(self):
         return BcfVarCallDependencies(self.bcftools_fpath)
     # end def get_bcftools_dependencies
-
 # end class OarsmanArguments
 
 
@@ -127,14 +131,19 @@ class Bowtie2Dependencies:
     def __init__(
         self,
         bowtie2_fpath,
-        bowtie2_build_fpath,
-        samtools_fpath
+        bowtie2_build_fpath
     ):
 
         self.bowtie2_fpath = bowtie2_fpath
         self.bowtie2_build_fpath = bowtie2_build_fpath
-        self.samtools_fpath = samtools_fpath
 # end class Bowtie2Dependencies
+
+
+class SamtoolsDependencies:
+    def __init__(self, samtools_fpath):
+        self.samtools_fpath = samtools_fpath
+    # end def __init__
+# end class SamtoolsDependencies
 
 
 class BcfVarCallDependencies:

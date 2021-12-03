@@ -97,6 +97,19 @@ class OarsmanArguments:
         )
     # end def get_read_mapping_args
 
+    def get_aln_preprocess_args(
+        self,
+        sample_name,
+        raw_alignment_fpath
+    ):
+        return AlnPreprocessArguments(
+            sample_name,
+            raw_alignment_fpath,
+            self.ref_genome_seq_fpath,
+            self.n_threads
+        )
+    # end def get_aln_preprocess_args
+
     def get_var_call_args(self, sample_name, alignment_fpath):
 
         var_calls_dirpath = os.path.join(
@@ -221,6 +234,24 @@ class ReadMappingArguments:
         self.n_threads = n_threads
     # end def __init__
 # end class ReadMappingArguments
+
+
+class AlnPreprocessArguments:
+
+    def __init__(
+        self,
+        sample_name,
+        raw_alignment_fpath,
+        ref_genome_fpath,
+        n_threads
+    ):
+
+        self.sample_name = sample_name
+        self.raw_alignment_fpath = raw_alignment_fpath
+        self.ref_genome_fpath = ref_genome_fpath
+        self.n_threads = n_threads
+    # end def __init__
+# end class AlnPreprocessArguments
 
 
 class CallVariantsArguments:
