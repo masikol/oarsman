@@ -24,10 +24,16 @@ from src.oarsman_arguments import PairArguments
 from src.oarsman_dependencies import PairDependencies
 from src.output_data import PairOutput
 
-from src.runners.bowtie2_runner import run_bowtie2
+
 from src.oarsman_arguments import ReadMappingArguments
-from src.oarsman_dependencies import Bowtie2Dependencies
 from src.output_data import ReadMappingOutput
+
+from src.runners.bowtie2_runner import run_bowtie2
+from src.oarsman_dependencies import Bowtie2Dependencies
+
+from src.runners.bwa_runner import run_bwa
+from src.oarsman_dependencies import BwaDependencies
+
 
 from src.runners.aln_preprocess_runner import run_aln_preprocess
 from src.oarsman_arguments import AlnPreprocessArguments
@@ -134,9 +140,16 @@ def main():
             pair_output.reads_R2_paired_fpath,
             pair_output.unpaired_reads_fpaths
         )
-        read_map_dependencies = oarsman_dependencies.get_bowtie2_dependencies()
+        # read_map_dependencies = oarsman_dependencies.get_bowtie2_dependencies()
 
-        read_mapping_output: ReadMappingOutput = run_bowtie2(
+        # read_mapping_output: ReadMappingOutput = run_bowtie2(
+        #     read_map_args,
+        #     read_map_dependencies
+        # )
+
+        read_map_dependencies = oarsman_dependencies.get_bwa_dependencies()
+
+        read_mapping_output: ReadMappingOutput = run_bwa(
             read_map_args,
             read_map_dependencies
         )

@@ -82,10 +82,16 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        '--bowtie2',
-        help='path to bowtie2 executable',
+        '--bwa',
+        help='path to bwa executable',
         required=False
     )
+
+    # parser.add_argument(
+    #     '--bowtie2',
+    #     help='path to bowtie2 executable',
+    #     required=False
+    # )
 
     parser.add_argument(
         '--samtools',
@@ -354,36 +360,57 @@ def _configure_oarsman_dependencies(command_line_args):
         # end if
     # end if
 
+    # Set bwa executable path (optional, has a default value)
+    oarsman_dependencies.bwa_fpath = command_line_args.bwa
 
-    # Set bowtie2 executable path (optional, has a default value)
-    oarsman_dependencies.bowtie2_fpath = command_line_args.bowtie2
-
-    if not oarsman_dependencies.bowtie2_fpath is None:
-        # This block will be run if a path to bowtie2 executable is specified in the command line
-        bowtie2_binaries = (
-            oarsman_dependencies.bowtie2_fpath,
-            oarsman_dependencies.bowtie2_fpath+'-build'
-        )
-        for util_fpath in bowtie2_binaries:
-            if not os.path.exists(util_fpath):
-                errors.append(f'File `{util_fpath}` does not exist')
-            elif not os.access(util_fpath, os.X_OK):
-                errors.append(f"""File `{util_fpath}` is not executable
-        (please change permissions for it)""")
-            # end if
-        # end for
+    if not oarsman_dependencies.bwa_fpath is None:
+        # This block will be run if a path to bwa executable is specified in the command line
+        if not os.path.exists(oarsman_dependencies.bwa_fpath):
+            errors.append(f'File `{oarsman_dependencies.seqkit_fpath}` does not exist')
+        elif not os.access(oarsman_dependencies.bwa_fpath, os.X_OK):
+            errors.append(f"""bwa file `{oarsman_dependencies.bwa_fpath}` is not executable
+    (please change permissions for it)""")
+        # end if
     else:
-        # This block will be run if a path to bowtie2 executable is not specified in the command line
+        # This block will be run if a path to bwa executable is not specified in the command line
         # So, we will search for it in environment variables
-        for util_name in ('bowtie2', 'bowtie2-build'):
-            util_in_path = util_is_in_path(util_name)
-            if not util_in_path:
-                errors.append(f'Cannot find {util_name} executable in the PATH environment variable')
-            else:
-                oarsman_dependencies.bowtie2_fpath = 'bowtie2'
-            # end if
-        # end for
+        bwa_in_path = util_is_in_path('bwa')
+        if not bwa_in_path:
+            errors.append('Cannot find bwa executable in the PATH environment variable')
+        else:
+            oarsman_dependencies.bwa_fpath = 'bwa'
+        # end if
     # end if
+
+    # # Set bowtie2 executable path (optional, has a default value)
+    # oarsman_dependencies.bowtie2_fpath = command_line_args.bowtie2
+
+    # if not oarsman_dependencies.bowtie2_fpath is None:
+    #     # This block will be run if a path to bowtie2 executable is specified in the command line
+    #     bowtie2_binaries = (
+    #         oarsman_dependencies.bowtie2_fpath,
+    #         oarsman_dependencies.bowtie2_fpath+'-build'
+    #     )
+    #     for util_fpath in bowtie2_binaries:
+    #         if not os.path.exists(util_fpath):
+    #             errors.append(f'File `{util_fpath}` does not exist')
+    #         elif not os.access(util_fpath, os.X_OK):
+    #             errors.append(f"""File `{util_fpath}` is not executable
+    #     (please change permissions for it)""")
+    #         # end if
+    #     # end for
+    # else:
+    #     # This block will be run if a path to bowtie2 executable is not specified in the command line
+    #     # So, we will search for it in environment variables
+    #     for util_name in ('bowtie2', 'bowtie2-build'):
+    #         util_in_path = util_is_in_path(util_name)
+    #         if not util_in_path:
+    #             errors.append(f'Cannot find {util_name} executable in the PATH environment variable')
+    #         else:
+    #             oarsman_dependencies.bowtie2_fpath = 'bowtie2'
+    #         # end if
+    #     # end for
+    # # end if
 
 
     # Set samtools executable path (optional, has a default value)

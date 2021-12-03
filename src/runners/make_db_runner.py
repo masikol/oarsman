@@ -31,6 +31,7 @@ def _configure_make_db_command(
 def run_make_db(args: MakeDbArguments, dependencies: MakeDbDependencies):
 
     command_str = _configure_make_db_command(args, dependencies)
+    print()
 
     pipe = sp.Popen(command_str, shell=True, stderr=sp.PIPE)
     stdout_stderr = pipe.communicate()

@@ -93,5 +93,5 @@ python3 oarsman.py \
 3. samtools
 4. bcftools
 5. BLAST+
-6. bowtie2
+6. bwa
 7. seqkit

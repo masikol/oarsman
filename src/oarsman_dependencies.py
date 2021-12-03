@@ -14,6 +14,7 @@ class OarsmanDependencies:
 
         # Dependencies for read mapping
         self.bowtie2_fpath = None
+        self.bwa_fpath = None
         self.samtools_fpath = None
 
         # Dependencies for variant calling
@@ -52,13 +53,20 @@ class OarsmanDependencies:
         )
     # end def get_pair_dependencies
 
+    def get_bwa_dependencies(self):
+
+        return BwaDependencies(
+            self.bwa_fpath
+        )
+    # end def get_bwa_dependencies
+
     def get_bowtie2_dependencies(self):
 
         return Bowtie2Dependencies(
             self.bowtie2_fpath,
             self.bowtie2_fpath + '-build'
         )
-    # end def get_pair_dependencies
+    # end def get_bowtie2_dependencies
 
     def get_samtools_dependencies(self):
         return SamtoolsDependencies(
@@ -124,6 +132,17 @@ class PairDependencies:
         self.seqkit_fpath = seqkit_fpath
     # end def __init__
 # end class PairDependencies
+
+
+class BwaDependencies:
+
+    def __init__(
+        self,
+        bwa_fpath
+    ):
+
+        self.bwa_fpath = bwa_fpath
+# end class BwaDependencies
 
 
 class Bowtie2Dependencies:
