@@ -23,10 +23,12 @@ def _configure_variant_call_command(
             '-Ob',
             f'--max-depth {max_coverage}', f'--max-idepth {max_coverage}',
             f'-f {args.reference_fpath}',
+            f'--threads {args.n_threads}',
             args.alignment_fpath,
             '|',
             dependencies.bcftools_fpath, 'call',
             '-mv', f'--ploidy {ploidy}', '-Ou',
+            f'--threads {args.n_threads}',
             f'-o {variants_fpath}'
         ]
     )
@@ -46,6 +48,7 @@ def _configure_norm_indels_command(
         [
             dependencies.bcftools_fpath, 'norm',
             '-Ob',
+            f'--threads {args.n_threads}',
             f'-f {args.reference_fpath}',
             f'-o {norm_variants_fpath}',
             variants_fpath
@@ -70,6 +73,7 @@ def _configure_filter_command(
         [
             dependencies.bcftools_fpath, 'filter',
             '-Ob',
+            f'--threads {args.n_threads}',
             f"-e '%QUAL<{args.min_variant_qual}'",
             f'--IndelGap {indel_gap}',
             f'--SnpGap {spn_gap}',
@@ -93,6 +97,7 @@ def _configure_consensus_command(
         [
             dependencies.bcftools_fpath, 'consensus',
             f'-f {args.reference_fpath}',
+            f'--prefix {args.sample_name}_',
             f'-o {consensus_fpath}',
             filt_variants_fpath
         ]
@@ -103,13 +108,15 @@ def _configure_consensus_command(
 
 
 def _configure_index_bcf_command(
+    args: CallVariantsArguments,
+    dependencies: BcfVarCallDependencies,
     file_path_to_index: str,
-    dependencies: BcfVarCallDependencies
 ):
 
     command = ' '.join(
         [
             dependencies.bcftools_fpath, 'index',
+            f'--threads {args.n_threads}',
             file_path_to_index
         ]
     )
@@ -181,8 +188,9 @@ def run_bcftools_var_call(args, dependencies):
 
     # Index baseline variants file
     command_str = _configure_index_bcf_command(
-        baseline_variants_fpath,
-        dependencies
+        args,
+        dependencies,
+        baseline_variants_fpath
     )
 
     print(f'Indexing file `{baseline_variants_fpath}`')
@@ -239,8 +247,9 @@ def run_bcftools_var_call(args, dependencies):
 
     # Index normalized variants file
     command_str = _configure_index_bcf_command(
-        norm_variants_fpath,
-        dependencies
+        args,
+        dependencies,
+        norm_variants_fpath
     )
 
     print(f'Indexing file `{norm_variants_fpath}`')
@@ -298,8 +307,9 @@ def run_bcftools_var_call(args, dependencies):
 
     # Index filtered variants file
     command_str = _configure_index_bcf_command(
-        filt_variants_fpath,
-        dependencies
+        args,
+        dependencies,
+        filt_variants_fpath
     )
 
     print(f'Indexing file `{filt_variants_fpath}`')

@@ -115,7 +115,8 @@ class OarsmanArguments:
             self.ref_genome_seq_fpath,
             self.min_variant_qual,
             var_calls_dirpath,
-            consensus_dirpath
+            consensus_dirpath,
+            self.n_threads
         )
 
     # end def get_var_call_args
@@ -231,7 +232,8 @@ class CallVariantsArguments:
         reference_fpath,
         min_variant_qual,
         var_calls_dirpath,
-        consensus_dirpath
+        consensus_dirpath,
+        n_threads
     ):
 
         self.sample_name = sample_name
@@ -240,5 +242,6 @@ class CallVariantsArguments:
         self.min_variant_qual = min_variant_qual
         self.var_calls_dirpath = var_calls_dirpath
         self.consensus_dirpath = consensus_dirpath
+        self.n_threads = n_threads
     # end def __init__
 # end class CallVariantsArguments

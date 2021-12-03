@@ -78,7 +78,7 @@ def main():
     for i_sample in range(n_samples):
 
         sample_name = fastq_fpath_to_sample_name(
-            oarsman_args.reads_R1_fpaths[0][0]
+            oarsman_args.reads_R1_fpaths[i_sample][0]
         )
 
         print(f'  \n|=== Processing sample #{i_sample+1}/{n_samples}: {sample_name} ===|\n')
