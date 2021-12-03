@@ -93,11 +93,18 @@ def parse_arguments():
         required=False
     )
 
+    parser.add_argument(
+        '--bcftools',
+        help='path to bcftools executable',
+        required=False
+    )
+
     # Misc
 
     parser.add_argument(
-        '--tmp-dir',
-        help='path to a temporary directory for the run',
+        '-o',
+        '--outdir',
+        help='output directory',
         required=False
     )
 
@@ -234,16 +241,16 @@ Reverse-read files ({} files): {}.""".format(
     # end if
 
     # Set temporary directory (optional, has a default value)
-    if not command_line_args.tmp_dir is None:
-        oarsman_args.tmp_dir_path = abspath(command_line_args.tmp_dir)
+    if not command_line_args.outdir is None:
+        oarsman_args.outdir_path = abspath(command_line_args.outdir)
     # end if
     try:
-        if not os.path.isdir(oarsman_args.tmp_dir_path):
-            os.makedirs(oarsman_args.tmp_dir_path)
+        if not os.path.isdir(oarsman_args.outdir_path):
+            os.makedirs(oarsman_args.outdir_path)
         # end if
     except OSError as err:
         errors.append('Cannot create temporary directory `{}`: {}' \
-            .format(oarsman_args.tmp_dir_path, err)
+            .format(oarsman_args.outdir_path, err)
         )
     # end try
 
@@ -400,6 +407,30 @@ def _configure_oarsman_dependencies(command_line_args):
             oarsman_dependencies.samtools_fpath = 'samtools'
         # end if
     # end if
+
+
+    # Set bcftools executable path (optional, has a default value)
+    oarsman_dependencies.bcftools_fpath = command_line_args.bcftools
+
+    if not oarsman_dependencies.bcftools_fpath is None:
+        # This block will be run if a path to samtools executable is specified in the command line
+        if not os.path.exists(oarsman_dependencies.bcftools_fpath):
+            errors.append(f'File `{oarsman_dependencies.seqkit_fpath}` does not exist')
+        elif not os.access(oarsman_dependencies.bcftools_fpath, os.X_OK):
+            errors.append(f"""bcftools file `{oarsman_dependencies.samtools_fpath}` is not executable
+    (please change permissions for it)""")
+        # end if
+    else:
+        # This block will be run if a path to samtools executable is not specified in the command line
+        # So, we will search for it in environment variables
+        bcftools_in_path = util_is_in_path('bcftools')
+        if not bcftools_in_path:
+            errors.append('Cannot find bcftools executable in the PATH environment variable')
+        else:
+            oarsman_dependencies.bcftools_fpath = 'bcftools'
+        # end if
+    # end if
+
 
     # Set blastn executable path (optional, has a default value)
     # So, we will search for blastn in environment variables

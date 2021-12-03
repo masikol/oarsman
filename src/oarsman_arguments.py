@@ -21,8 +21,11 @@ class OarsmanArguments:
         self.min_minor_len = 25  # bp
         self.chunk_size = 1000   # reads
 
+        # Variant calling
+        self.min_variant_qual = 20 # in Phred scale
+
         # Misc
-        self.tmp_dir_path = os.path.join(os.getcwd(), 'oarsman_tmpdir')
+        self.outdir_path = os.path.join(os.getcwd(), 'oarsman_outdir')
         self.n_threads = 1 # thread
     # end def __init__
 
@@ -31,7 +34,7 @@ class OarsmanArguments:
         return MakeAmpliconsArguments(
             self.primers_fpath,
             self.ref_genome_seq_fpath,
-            os.path.join(self.tmp_dir_path, 'reference_amplicons', 'reference_amplicons'),
+            os.path.join(self.outdir_path, 'reference_amplicons', 'reference_amplicons'),
             self.min_minor_len
         )
     # end def get_make_amplicons_args
@@ -40,7 +43,7 @@ class OarsmanArguments:
 
         return MakeDbArguments(
             input_seqs_fpath,
-            os.path.join(self.tmp_dir_path, 'db_for_kromsatel')
+            os.path.join(self.outdir_path, 'db_for_kromsatel')
         )
     # end def get_make_db_args
 
@@ -59,7 +62,7 @@ class OarsmanArguments:
             reads_R2_fpaths,
             self.primers_fpath,
             db_dir_path,
-            os.path.join(self.tmp_dir_path, 'kromsatel_outdir'),
+            os.path.join(self.outdir_path, 'kromsatel_outdir'),
             self.min_major_len,
             self.min_minor_len,
             self.chunk_size,
@@ -89,10 +92,33 @@ class OarsmanArguments:
             unpaired_reads_fpaths,
             self.ref_genome_seq_fpath,
             index_base_fpath,
-            os.path.join(self.tmp_dir_path, 'read_mappings'),
+            os.path.join(self.outdir_path, 'read_mappings'),
             self.n_threads
         )
     # end def get_read_mapping_args
+
+    def get_var_call_args(self, sample_name, alignment_fpath):
+
+        var_calls_dirpath = os.path.join(
+            self.outdir_path,
+            'variant_calls'
+        )
+
+        consensus_dirpath = os.path.join(
+            self.outdir_path,
+            'consensus'
+        )
+
+        return CallVariantsArguments(
+            sample_name,
+            alignment_fpath,
+            self.ref_genome_seq_fpath,
+            self.min_variant_qual,
+            var_calls_dirpath,
+            consensus_dirpath
+        )
+
+    # end def get_var_call_args
 # end class OarsmanArguments
 
 
@@ -194,3 +220,25 @@ class ReadMappingArguments:
         self.n_threads = n_threads
     # end def __init__
 # end class ReadMappingArguments
+
+
+class CallVariantsArguments:
+
+    def __init__(
+        self,
+        sample_name,
+        alignment_fpath,
+        reference_fpath,
+        min_variant_qual,
+        var_calls_dirpath,
+        consensus_dirpath
+    ):
+
+        self.sample_name = sample_name
+        self.alignment_fpath = alignment_fpath
+        self.reference_fpath = reference_fpath
+        self.min_variant_qual = min_variant_qual
+        self.var_calls_dirpath = var_calls_dirpath
+        self.consensus_dirpath = consensus_dirpath
+    # end def __init__
+# end class CallVariantsArguments

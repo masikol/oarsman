@@ -37,3 +37,17 @@ class PairOutput:
         self.unpaired_reads_fpaths = unpaired_reads_fpaths
     # end __init__
 # end class PairOutput
+
+
+class ReadMappingOutput:
+    def __init__(self, alignment_fpath):
+        self.alignment_fpath = alignment_fpath
+    # end def __init__
+# end class ReadMappingOutput
+
+
+class VariantCallingOutput:
+    def __init__(self, consensus_fpath):
+        self.consensus_fpath = consensus_fpath
+    # end def __init__
+# end class VariantCallingOutput

@@ -25,6 +25,15 @@ from src.oarsman_dependencies import PairDependencies
 from src.output_data import PairOutput
 
 from src.runners.bowtie2_runner import run_bowtie2
+from src.oarsman_arguments import ReadMappingArguments
+from src.oarsman_dependencies import Bowtie2Dependencies
+from src.output_data import ReadMappingOutput
+
+from src.runners.bcftools_var_call_runner import run_bcftools_var_call
+from src.oarsman_arguments import CallVariantsArguments
+from src.oarsman_dependencies import BcfVarCallDependencies
+from src.output_data import VariantCallingOutput
+
 
 
 def main():
@@ -111,6 +120,7 @@ def main():
             )
         # end if
 
+        # Map the reads
         read_map_args = oarsman_args.get_read_mapping_args(
             sample_name,
             pair_output.reads_R1_paired_fpath,
@@ -119,7 +129,23 @@ def main():
         )
         read_map_dependencies = oarsman_dependencies.get_bowtie2_dependencies()
 
-        read_mapping_output = run_bowtie2(read_map_args, read_map_dependencies)
+        read_mapping_output: ReadMappingOutput = run_bowtie2(
+            read_map_args,
+            read_map_dependencies
+        )
 
+        # Call variants
+        var_call_args: CallVariantsArguments = oarsman_args.get_var_call_args(
+            sample_name,
+            read_mapping_output.alignment_fpath
+        )
+        var_call_dependencies: BcfVarCallDependencies = oarsman_dependencies.get_bcftools_dependencies()
+
+        var_call_output: VariantCalling_Output = run_bcftools_var_call(
+            var_call_args,
+            var_call_dependencies
+        )
+
+        print(f'Consensus: `{var_call_output.consensus_fpath}`')
     # end for
 # end def main

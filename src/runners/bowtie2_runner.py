@@ -5,7 +5,7 @@ import subprocess as sp
 
 from src.oarsman_arguments import ReadMappingArguments
 from src.oarsman_dependencies import Bowtie2Dependencies
-# from src.output_data import ReadMappingOutput
+from src.output_data import ReadMappingOutput
 
 from src.filesystem import rm_fastq_extention, rm_file
 
@@ -176,7 +176,7 @@ def run_bowtie2(args, dependencies):
     command_str = _configure_bow1tie2_command(args, dependencies, sam_outfpath)
 
     print('Mapping the reads...')
-    print(command_str)
+    # print(command_str)
     pipe = sp.Popen(command_str, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
     stdout_stderr = pipe.communicate()
 
@@ -276,4 +276,5 @@ def run_bowtie2(args, dependencies):
         sys.exit(1)
     # end if
 
+    return ReadMappingOutput(sorted_bam_outfpath)
 # end def run_bowtie2
