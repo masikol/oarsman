@@ -1,6 +1,6 @@
 # oarsman
 
-A pipeline for determining sequences of genomes from overlapping amplicon data
+Oarsman (**O**verlapping **A**mplicons **R**eference) is a pipeline for obtaining consensus genome sequences from overlapping amplicon data using a reference genome sequence.
 
 ## Description
 
@@ -77,8 +77,8 @@ Let the forward reads be stored in files `1_S7_L001_R1_001_part_one.fastq.gz` an
 
 ```
 python3 oarsman.py \
-    -1 1_S7_L001_R1_001_part_one.fastq.gz 1_S7_L001_R2_001_part_two.fastq.gz \
-    -2 1_S7_L001_R1_001_part_one.fastq.gz 1_S7_L001_R2_001_part_two.fastq.gz \
+    -1 1_S7_L001_R1_001_part_one.fastq.gz 1_S7_L001_R1_001_part_two.fastq.gz \
+    -2 1_S7_L001_R2_001_part_one.fastq.gz 1_S7_L001_R2_001_part_two.fastq.gz \
     -p nCov-2019-alt_primers.csv \
     -r Wuhan-Hu-1-compele-genome.fasta \
     --kromsatel-dir /mnt/1.5_drive_0/repos/kromsatel \
