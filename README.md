@@ -13,7 +13,8 @@ Oarsman (**O**verlapping **A**mplicons, **R**eference) is a pipeline for obtaini
 ### Output data:
 
 1. The consensus sequence (fasta) with variants applied according to the reads (output subdirectory `consensus`).
-2. Various temporary files: reads cleaned by kromsatel, `.bam` mapping file, `.bcf` variant file etc.
+2. The consensus sequence with low-coverage regions annotated (files `consensus/*annotated_consensus.gbk`).
+3. Various temporary files: reads cleaned by kromsatel, `.bam` mapping file, `.bcf` variant file etc.
 
 
 ## Usage
@@ -22,53 +23,57 @@ Oarsman (**O**verlapping **A**mplicons, **R**eference) is a pipeline for obtaini
 
 ```
 python3 oarsman.py \
-    -1 20_S30_L001.fastq.gz \                          # unpaired reads
-    -p nCov-2019-alt_primers.csv \                     # ARTIC primers
-    -r Wuhan-Hu-1-compele-genome.fasta \               # Reference sequence
-    --kromsatel-dir /mnt/1.5_drive_0/repos/kromsatel \ # Kromsatel source directory
-    -t 4 \                                             # CPU threads
-    -o my_outdir                                       # Output directory
+    -1 20_S30_L001.fastq.gz \                           # unpaired reads
+    -p nCov-2019-alt_primers.csv \                      # ARTIC primers
+    -r Wuhan-Hu-1-compele-genome.fasta \                # Reference sequence
+    --kromsatel-dir /some/dir/kromsatel \               # Kromsatel source directory
+    --highlighter-dir /some/dir/consensus-highlighter \ # consensus-highlighter source directory
+    -t 4 \                                              # CPU threads
+    -o my_outdir                                        # Output directory
 ```
 
 ### Single-end reads, multiple samples
 
 ```
 python3 oarsman.py \
-    -1 20_S30_L001.fastq.gz \                          # unpaired reads, sample 1
-    -1 1_S7_L001.fastq.gz \                            # unpaired reads, sample 2
-    -p nCov-2019-alt_primers.csv \                     # ARTIC primers
-    -r Wuhan-Hu-1-compele-genome.fasta \               # Reference sequence
-    --kromsatel-dir /mnt/1.5_drive_0/repos/kromsatel \ # Kromsatel source directory
-    -t 4 \                                             # CPU threads
-    -o my_outdir                                       # Output directory
+    -1 20_S30_L001.fastq.gz \                           # unpaired reads, sample 1
+    -1 1_S7_L001.fastq.gz \                             # unpaired reads, sample 2
+    -p nCov-2019-alt_primers.csv \                      # ARTIC primers
+    -r Wuhan-Hu-1-compele-genome.fasta \                # Reference sequence
+    --kromsatel-dir /some/dir/kromsatel \               # Kromsatel source directory
+    --highlighter-dir /some/dir/consensus-highlighter \ # consensus-highlighter source directory
+    -t 4 \                                              # CPU threads
+    -o my_outdir                                        # Output directory
 ```
 
 ### Paired-end reads, single sample
 
 ```
 python3 oarsman.py \
-    -1 20_S30_L001_R1_001.fastq.gz \                   # forward (R1) reads
-    -2 20_S30_L001_R2_001.fastq.gz \                   # reverse (R2) reads
-    -p nCov-2019-alt_primers.csv \                     # ARTIC primers
-    -r Wuhan-Hu-1-compele-genome.fasta \               # Reference sequence
-    --kromsatel-dir /mnt/1.5_drive_0/repos/kromsatel \ # Kromsatel source directory
-    -t 4 \                                             # CPU threads
-    -o my_outdir                                       # Output directory
+    -1 20_S30_L001_R1_001.fastq.gz \                    # forward (R1) reads
+    -2 20_S30_L001_R2_001.fastq.gz \                    # reverse (R2) reads
+    -p nCov-2019-alt_primers.csv \                      # ARTIC primers
+    -r Wuhan-Hu-1-compele-genome.fasta \                # Reference sequence
+    --kromsatel-dir /some/dir/kromsatel \ # Kromsatel source directory
+    --highlighter-dir /some/dir/consensus-highlighter \ # consensus-highlighter source directory
+    -t 4 \                                              # CPU threads
+    -o my_outdir                                        # Output directory
 ```
 
 ### Paired-end reads, multiple samples
 
 ```
 python3 oarsman.py \
-    -1 20_S30_L001_R1_001.fastq.gz \                   # forward (R1) reads, sample 1
-    -2 20_S30_L001_R2_001.fastq.gz \                   # reverse (R2) reads, sample 1
-    -1 1_S7_L001_R1_001.fastq.gz \                     # forward (R1) reads, sample 2
-    -2 1_S7_L001_R2_001.fastq.gz \                     # reverse (R2) reads, sample 2
-    -p nCov-2019-alt_primers.csv \                     # ARTIC primers
-    -r Wuhan-Hu-1-compele-genome.fasta \               # Reference sequence
-    --kromsatel-dir /mnt/1.5_drive_0/repos/kromsatel \ # Kromsatel source directory
-    -t 4 \                                             # CPU threads
-    -o my_outdir                                       # Output directory
+    -1 20_S30_L001_R1_001.fastq.gz \                    # forward (R1) reads, sample 1
+    -2 20_S30_L001_R2_001.fastq.gz \                    # reverse (R2) reads, sample 1
+    -1 1_S7_L001_R1_001.fastq.gz \                      # forward (R1) reads, sample 2
+    -2 1_S7_L001_R2_001.fastq.gz \                      # reverse (R2) reads, sample 2
+    -p nCov-2019-alt_primers.csv \                      # ARTIC primers
+    -r Wuhan-Hu-1-compele-genome.fasta \                # Reference sequence
+    --kromsatel-dir /some/dir/kromsatel \               # Kromsatel source directory
+    --highlighter-dir /some/dir/consensus-highlighter \ # consensus-highlighter source directory
+    -t 4 \                                              # CPU threads
+    -o my_outdir                                        # Output directory
 ```
 
 ### If reads from a single sample is split into multiple files
@@ -81,7 +86,8 @@ python3 oarsman.py \
     -2 1_S7_L001_R2_001_part_one.fastq.gz 1_S7_L001_R2_001_part_two.fastq.gz \
     -p nCov-2019-alt_primers.csv \
     -r Wuhan-Hu-1-compele-genome.fasta \
-    --kromsatel-dir /mnt/1.5_drive_0/repos/kromsatel \
+    --kromsatel-dir /some/dir/kromsatel \
+    --highlighter-dir /some/dir/consensus-highlighter \ # consensus-highlighter source directory
     -t 4 \
     -o my_outdir
 ```
@@ -89,9 +95,10 @@ python3 oarsman.py \
 ## Dependencies
 
 1. kromsatel
-2. Python packages `pandas` and `numpy`.
-3. samtools
-4. bcftools
-5. BLAST+
-6. bwa
-7. seqkit
+2. consensus-highlighter (version 2.0.a or later)
+3. Python packages `pandas` and `numpy`.
+4. samtools
+5. bcftools
+6. BLAST+
+7. bwa
+8. seqkit

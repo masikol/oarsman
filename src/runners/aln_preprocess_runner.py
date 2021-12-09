@@ -3,9 +3,9 @@ import os
 import sys
 import subprocess as sp
 
+from src.mapping import Mapping
 from src.oarsman_arguments import AlnPreprocessArguments
 from src.oarsman_dependencies import SamtoolsDependencies
-from src.output_data import AlnPreprocessOutput
 
 from src.filesystem import rm_file
 
@@ -79,11 +79,11 @@ def run_aln_preprocess(args: AlnPreprocessArguments, dependencies: SamtoolsDepen
 
     bam_outfpath = os.path.join(
         outdir_path,
-        args.sample_name + '.bam'
+       '{}_{}.bam'.format(args.sample_name, args.output_suffix)
     )
     sorted_bam_outfpath = os.path.join(
         outdir_path,
-        args.sample_name + '.sorted.bam'
+        '{}_{}.sorted.bam'.format(args.sample_name, args.output_suffix)
     )
 
 
@@ -172,5 +172,5 @@ def run_aln_preprocess(args: AlnPreprocessArguments, dependencies: SamtoolsDepen
         sys.exit(1)
     # end if
 
-    return AlnPreprocessOutput(sorted_bam_outfpath)
+    return Mapping(sorted_bam_outfpath)
 # end def run_aln_preprocess

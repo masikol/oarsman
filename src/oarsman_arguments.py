@@ -1,6 +1,8 @@
 
 import os
+import sys
 
+from src.reads import Reads
 from src.filesystem import rm_fasta_extention
 
 class OarsmanArguments:
@@ -24,10 +26,53 @@ class OarsmanArguments:
         # Variant calling
         self.min_variant_qual = 20 # in Phred scale
 
+        # Annotation
+        low_coverages_int = (10,)
+        self.low_coverages = tuple(
+            map(
+                str,
+                low_coverages_int
+            )
+        )
+
         # Misc
         self.outdir_path = os.path.join(os.getcwd(), 'oarsman_outdir')
         self.n_threads = 1 # thread
+
+        self._set_output_subdirs()
+        self._create_output_subdirs()
     # end def __init__
+
+
+    def _set_output_subdirs(self):
+        self.output_subdirs = {
+            'reference_amplicons': os.path.join(self.outdir_path, 'reference_amplicons'),
+            'db_for_kromsatel':    os.path.join(self.outdir_path, 'db_for_kromsatel'),
+            'kromsatel_outdir':    os.path.join(self.outdir_path, 'kromsatel_outdir'),
+            'fasta_indicies':      os.path.join(self.outdir_path, 'fasta_indicies'),
+            'read_mappings':       os.path.join(self.outdir_path, 'read_mappings'),
+            'variant_calls':       os.path.join(self.outdir_path, 'variant_calls'),
+            'consensus':           os.path.join(self.outdir_path, 'consensus'),
+        }
+    # end def _set_output_subdirs
+
+
+    def _create_output_subdirs(self):
+
+        for subdir_path in self.output_subdirs.values():
+            if not os.path.isdir(subdir_path):
+                try:
+                    os.makedirs(subdir_path)
+                except OSError as err:
+                    print(f'\nError: cannot create directory `{subdir_path}`')
+                    print(str(err))
+                    sys.exit(1)
+                # end try
+            # end if
+        # end for
+
+    # end def _create_output_subdirs
+
 
     def get_make_amplicons_args(self):
 
@@ -73,26 +118,25 @@ class OarsmanArguments:
     def get_read_mapping_args(
         self,
         sample_name,
-        reads_R1_fpath,
-        reads_R2_fpath,
-        unpaired_reads_fpaths
+        reads: Reads,
+        reference_seq_fpath,
+        output_suffix
     ):
 
-        ref_genome_basename = os.path.basename(self.ref_genome_seq_fpath)
+        ref_genome_basename = os.path.basename(reference_seq_fpath)
 
         index_base_fpath = os.path.join(
-            os.path.dirname(self.ref_genome_seq_fpath),
-            rm_fasta_extention(ref_genome_basename) + 'index'
+            os.path.join(self.outdir_path, 'fasta_indicies'),
+            rm_fasta_extention(ref_genome_basename) + '_index'
         )
 
         return ReadMappingArguments(
             sample_name,
-            reads_R1_fpath,
-            reads_R2_fpath,
-            unpaired_reads_fpaths,
-            self.ref_genome_seq_fpath,
+            reads,
+            reference_seq_fpath,
             index_base_fpath,
             os.path.join(self.outdir_path, 'read_mappings'),
+            output_suffix,
             self.n_threads
         )
     # end def get_read_mapping_args
@@ -100,13 +144,15 @@ class OarsmanArguments:
     def get_aln_preprocess_args(
         self,
         sample_name,
-        raw_alignment_fpath
+        raw_alignment_fpath,
+        output_suffix
     ):
         return AlnPreprocessArguments(
             sample_name,
             raw_alignment_fpath,
             self.ref_genome_seq_fpath,
-            self.n_threads
+            self.n_threads,
+            output_suffix
         )
     # end def get_aln_preprocess_args
 
@@ -133,6 +179,22 @@ class OarsmanArguments:
         )
 
     # end def get_var_call_args
+
+    def get_consens_annot_args(self, sample_name, seq_fpath, mapping):
+
+        outfpath = os.path.join(
+            self.output_subdirs['consensus'],
+            f'{sample_name}_annotated_consensus.gbk'
+        )
+
+        return ConsensAnnotArguments(
+            sample_name,
+            seq_fpath,
+            mapping,
+            self.low_coverages,
+            outfpath
+        )
+    # end def get_consens_annot_args
 # end class OarsmanArguments
 
 
@@ -215,22 +277,20 @@ class ReadMappingArguments:
     def __init__(
         self,
         sample_name,
-        reads_R1_fpath,
-        reads_R2_fpath,
-        unpaired_reads_fpaths,
+        reads,
         ref_genome_fpath,
         genome_index_base_fpath,
         outdir_path,
+        output_suffix,
         n_threads
     ):
 
         self.sample_name = sample_name
-        self.reads_R1_fpath = reads_R1_fpath
-        self.reads_R2_fpath = reads_R2_fpath
-        self.unpaired_reads_fpaths = unpaired_reads_fpaths
+        self.reads = reads
         self.ref_genome_fpath = ref_genome_fpath
         self.genome_index_base_fpath = genome_index_base_fpath
         self.outdir_path = outdir_path
+        self.output_suffix = output_suffix
         self.n_threads = n_threads
     # end def __init__
 # end class ReadMappingArguments
@@ -243,13 +303,15 @@ class AlnPreprocessArguments:
         sample_name,
         raw_alignment_fpath,
         ref_genome_fpath,
-        n_threads
+        n_threads,
+        output_suffix
     ):
 
         self.sample_name = sample_name
         self.raw_alignment_fpath = raw_alignment_fpath
         self.ref_genome_fpath = ref_genome_fpath
         self.n_threads = n_threads
+        self.output_suffix = output_suffix
     # end def __init__
 # end class AlnPreprocessArguments
 
@@ -276,3 +338,15 @@ class CallVariantsArguments:
         self.n_threads = n_threads
     # end def __init__
 # end class CallVariantsArguments
+
+
+class ConsensAnnotArguments:
+
+    def __init__(self, sample_name, seq_fpath, mapping, low_coverages, outfpath):
+        self.sample_name = sample_name
+        self.seq_fpath = seq_fpath
+        self.mapping = mapping
+        self.low_coverages = low_coverages
+        self.outfpath = outfpath
+    # end def __init__
+# end class ConsensAnnoaArguments

@@ -76,6 +76,12 @@ def parse_arguments():
     )
 
     parser.add_argument(
+        '--highlighter-dir',
+        help='path to consensus-highlighter source directory',
+        required=True
+    )
+
+    parser.add_argument(
         '--seqkit',
         help='path to seqkit executable',
         required=False
@@ -313,7 +319,7 @@ Reverse-read files ({} files): {}.""".format(
             if oarsman_args.n_threads > len(os.sched_getaffinity(0)):
                 print(f'Your system has only {len(os.sched_getaffinity(0))} CPU threads available')
                 print('Switching number of threads from {} to {}' \
-                    .format(oarsman_args.n_threads), len(os.sched_getaffinity(0)))
+                    .format(oarsman_args.n_threads), len(os.shed_getaffinity(0)))
                 oarsman_args.n_threads = len(os.sched_getaffinity(0))
             # end if
         # end try
@@ -331,10 +337,26 @@ def _configure_oarsman_dependencies(command_line_args):
     # We will call this function often, so get rid of dots for speed
     abspath = os.path.abspath
 
+
     # Set kromsatel source dir (mandatory)
     oarsman_dependencies.kromsatel_dirpath = abspath(command_line_args.kromsatel_dir)
     if not os.path.isdir(oarsman_dependencies.kromsatel_dirpath):
         errors.append(f'Directory `{oarsman_dependencies.kromsatel_dirpath}` does not exist')
+    # end if
+
+
+    # Set consensus-highlighter source dir (mandatory)
+    highlighter_dirpath = abspath(command_line_args.highlighter_dir)
+    if not os.path.isdir(highlighter_dirpath):
+        errors.append(f'Directory `{highlighter_dirpath}` does not exist')
+    else:
+        oarsman_dependencies.highlighter_fpath = os.path.join(
+            highlighter_dirpath,
+            'consensus-highlighter.py'
+        )
+        if not os.path.isfile(oarsman_dependencies.highlighter_fpath):
+            errors.append(f'File `{oarsman_dependencies.highlighter_fpath}` does not exist')
+        # end if
     # end if
 
 

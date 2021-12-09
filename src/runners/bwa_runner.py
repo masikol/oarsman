@@ -3,9 +3,9 @@ import os
 import sys
 import subprocess as sp
 
+from src.mapping import Mapping
 from src.oarsman_arguments import ReadMappingArguments
 from src.oarsman_dependencies import BwaDependencies
-from src.output_data import ReadMappingOutput
 
 
 def _configure_bwa_index_command(
@@ -31,10 +31,12 @@ def _configure_bwa_command(
         sam_outfpath: str
     ):
 
-    if not args.reads_R1_fpath is None and not args.reads_R2_fpath is None:
-        bwa_read_arguments = ' '.join([args.reads_R1_fpath, args.reads_R2_fpath])
-    elif len(args.unpaired_reads_fpaths) == 1:
-        bwa_read_arguments = args.unpaired_reads_fpaths[0]
+    reads = args.reads
+
+    if not reads.forward_R1_path is None and not reads.reverse_R2_path is None:
+        bwa_read_arguments = ' '.join([reads.forward_R1_path, reads.reverse_R2_path])
+    elif len(reads.unpaired_fpaths) == 1:
+        bwa_read_arguments = reads.unpaired_fpaths[0]
     else:
         print('Error: invalied configuration of input files for bwa!')
         print('Please, contact the developer.')
@@ -57,19 +59,9 @@ def _configure_bwa_command(
 
 def run_bwa(args, dependencies):
 
-    if not os.path.isdir(args.outdir_path):
-        try:
-            os.makedirs(args.outdir_path)
-        except OSError as err:
-            print(f'\nError: cannot create directory `{args.outdir_path}`')
-            print(str(err))
-            sys.exit(1)
-        # end try
-    # end if
-
     sam_outfpath = os.path.join(
         args.outdir_path,
-        args.sample_name + '.sam'
+        '{}_{}.sam'.format(args.sample_name,args.output_suffix)
     )
 
     # Create index of reference fasta file
@@ -122,5 +114,5 @@ def run_bwa(args, dependencies):
         sys.exit(1)
     # end if
 
-    return ReadMappingOutput(sam_outfpath)
+    return Mapping(sam_outfpath)
 # end def run_bwa

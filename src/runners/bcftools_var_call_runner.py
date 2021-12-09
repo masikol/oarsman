@@ -127,18 +127,6 @@ def _configure_index_bcf_command(
 
 def run_bcftools_var_call(args, dependencies):
 
-    for outdir_path in (args.var_calls_dirpath, args.consensus_dirpath):
-        if not os.path.isdir(outdir_path):
-            try:
-                os.makedirs(outdir_path)
-            except OSError as err:
-                print(f'\nError: cannot create directory `{outdir_path}`')
-                print(str(err))
-                sys.exit(1)
-            # end try
-        # end if
-    # end for
-
     baseline_variants_fpath = os.path.join(
         args.var_calls_dirpath,
         f'{args.sample_name}.bcf'

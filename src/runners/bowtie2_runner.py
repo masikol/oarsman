@@ -5,7 +5,8 @@ import subprocess as sp
 
 from src.oarsman_arguments import ReadMappingArguments
 from src.oarsman_dependencies import Bowtie2Dependencies
-from src.output_data import ReadMappingOutput
+from src.mapping import Mapping
+# from src.output_data import ReadMappingOutput
 
 
 def _configure_bow1tie2_build_command(
@@ -58,16 +59,6 @@ def _configure_bow1tie2_command(
 
 
 def run_bowtie2(args, dependencies):
-
-    if not os.path.isdir(args.outdir_path):
-        try:
-            os.makedirs(args.outdir_path)
-        except OSError as err:
-            print(f'\nError: cannot create directory `{args.outdir_path}`')
-            print(str(err))
-            sys.exit(1)
-        # end try
-    # end if
 
     sam_outfpath = os.path.join(
         args.outdir_path,
@@ -124,5 +115,5 @@ def run_bowtie2(args, dependencies):
         sys.exit(1)
     # end if
 
-    return ReadMappingOutput(sam_outfpath)
+    return Mapping(sam_outfpath)
 # end def run_bowtie2

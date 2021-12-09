@@ -4,7 +4,15 @@ import os
 from src.filesystem import rm_fastq_extention
 
 
-def fastq_fpath_to_sample_name(fpath):
+class Sample:
+    def __init__(self, reads_fpath, ordinal_num):
+        self.name = _fastq_fpath_to_sample_name(reads_fpath)
+        self.ordinal_num = ordinal_num # 0-based
+    # end def __init__
+# end class Sample
+
+
+def _fastq_fpath_to_sample_name(fpath):
 
     basename_no_extention = os.path.basename(
         rm_fastq_extention(fpath)
@@ -24,4 +32,4 @@ def fastq_fpath_to_sample_name(fpath):
     # end if
 
     return sample_name
-# end def fastq_fpath_to_sample_name
+# end def _fastq_fpath_to_sample_name

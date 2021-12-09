@@ -5,7 +5,8 @@ import subprocess as sp
 
 from src.oarsman_arguments import PairArguments
 from src.oarsman_dependencies import PairDependencies
-from src.output_data import PairOutput
+# from src.output_data import PairOutput
+from src.reads import Reads
 
 from src.filesystem import rm_fastq_extention, rm_file, check_files_exist
 
@@ -81,7 +82,11 @@ def run_pair(args, dependencies):
         # end if
     # end for
 
-    return PairOutput(
+    for source_fpath in (args.reads_R1_fpath, args.reads_R2_fpath):
+        rm_file(source_fpath)
+    # end for
+
+    return Reads(
         paired_R1_fpath,
         paired_R2_fpath,
         unpaired_reads_fpaths

@@ -19,6 +19,9 @@ class OarsmanDependencies:
 
         # Dependencies for variant calling
         self.bcftools_fpath = None
+
+        # Depencencies for consensus annnotation
+        self.highlighter_fpath = None
     # end def __init__
 
     def get_make_amplicons_dependencies(self):
@@ -77,6 +80,10 @@ class OarsmanDependencies:
     def get_bcftools_dependencies(self):
         return BcfVarCallDependencies(self.bcftools_fpath)
     # end def get_bcftools_dependencies
+
+    def get_highlighter_dependencies(self):
+        return HighlighterDependencies(self.highlighter_fpath, self.samtools_fpath)
+    # end def get_highlighter_dependencies
 # end class OarsmanArguments
 
 
@@ -171,3 +178,12 @@ class BcfVarCallDependencies:
         self.bcftools_fpath = bcftools_fpath
     # end def __init__
 # end class BcfVarCallDependencies
+
+
+class HighlighterDependencies:
+
+    def __init__(self, highlighter_fpath, samtools_fpath):
+        self.highlighter_fpath = highlighter_fpath
+        self.samtools_fpath = samtools_fpath
+    # end def __init__
+# end class HighlighterDependencies
