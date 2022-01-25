@@ -3,10 +3,10 @@ import os
 import sys
 import subprocess as sp
 
-from src.oarsman_arguments import ReadMappingArguments
-from src.oarsman_dependencies import Bowtie2Dependencies
+from src.arguments import ReadMappingArguments
+from src.dependencies import Bowtie2Dependencies
 from src.mapping import Mapping
-# from src.output_data import ReadMappingOutput
+# from src.data_transfer_objects import ReadMappingOutput
 
 
 def _configure_bow1tie2_build_command(

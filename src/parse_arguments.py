@@ -3,10 +3,12 @@ import os
 import sys
 import argparse
 
-from src.oarsman_arguments import OarsmanArguments
-from src.oarsman_dependencies import OarsmanDependencies
-
-from src.filesystem import util_is_in_path, check_files_exist
+import src.filesystem as fs
+from src.printing import print_err
+from src.input_modes import InputModes
+from src.fatal_errors import FatalError
+from src.arguments import OarsmanArguments
+from src.dependencies import OarsmanDependencies
 
 
 def parse_arguments():
@@ -18,8 +20,8 @@ def parse_arguments():
     parser.add_argument(
         '-1',
         '--reads-R1',
-        help='path to a fastq file of forward (R1) reads or unpaired reads.',
-        required=True,
+        help='path to a fastq file of short forward (R1) or unpaired reads.',
+        required=False,
         action='append',
         nargs='+'
     )
@@ -27,7 +29,16 @@ def parse_arguments():
     parser.add_argument(
         '-2',
         '--reads-R2',
-        help='path to a fastq file of reverse (R2) reads.',
+        help='path to a fastq file of short reverse (R2) reads.',
+        required=False,
+        action='append',
+        nargs='*'
+    )
+
+    parser.add_argument(
+        '-l',
+        '--reads-long',
+        help='path to a fastq file of reverse long reads.',
         required=False,
         action='append',
         nargs='*'
@@ -50,40 +61,22 @@ def parse_arguments():
     # kromsatel arguments
 
     parser.add_argument(
-        '--kromsatel-mi',
-        help='minimum length of a minor amplicon for kromsatel',
-        required=False
-    )
-
-    parser.add_argument(
-        '--kromsatel-ma',
-        help='minimum length of a minor amplicon for kromsatel',
-        required=False
-    )
-
-    parser.add_argument(
-        '--kromsatel-chunk',
-        help='chunk size for kromsatel',
+        '--kromsatel-args',
+        help='argument string for kromsatel',
         required=False
     )
 
     # Dependencies
 
     parser.add_argument(
-        '--kromsatel-dir',
-        help='path to kromsatel source directory',
-        required=True
+        '--kromsatel',
+        help='path to the kromsatel script ("kromsatel.py")',
+        required=False
     )
 
     parser.add_argument(
-        '--highlighter-dir',
-        help='path to consensus-highlighter source directory',
-        required=True
-    )
-
-    parser.add_argument(
-        '--seqkit',
-        help='path to seqkit executable',
+        '--highlighter',
+        help='path to the consensus-highlighter script ("consensus-highlighter.py")',
         required=False
     )
 
@@ -127,134 +120,47 @@ def parse_arguments():
         required=False
     )
 
-    command_line_args = parser.parse_args()
+    argparse_args = parser.parse_args()
 
 
-    oarsman_args, arguments_errors = _configure_oarsman_args(command_line_args)
-    oarsman_dependencies, dependencies_errors = _configure_oarsman_dependencies(command_line_args)
+    oarsman_args, arguments_errors = _configure_oarsman_args(argparse_args)
+    oarsman_dependencies, dependencies_errors = _configure_oarsman_dependencies(argparse_args)
 
     if len(arguments_errors) != 0 or len(dependencies_errors) != 0:
-        print('\nErrors:')
+        print_err('\nErrors:')
         complete_error_list = arguments_errors + dependencies_errors
         for i, error in enumerate(complete_error_list):
-            print(f'\nError #{i+1}: {error}')
+            print_err(f'\nError #{i+1}: {error}')
         # end if
-        sys.exit(1)
+        raise FatalError
     # end if
 
     return oarsman_args, oarsman_dependencies
-# end def parse_arguments
+# end def
 
 
-
-def _configure_oarsman_args(command_line_args):
+def _configure_oarsman_args(argparse_args):
 
     oarsman_args = OarsmanArguments()
     errors = list()
 
-    # We will call this function often, so get rid of dots for speed
-    abspath = os.path.abspath
-
-    # Set forward reads (R1) fpath (mandatory)
-    # Iterate over samples -- each sample has its own collection of input files with reads
-    # `i` is a sample index
-    oarsman_args.reads_R1_fpaths = command_line_args.reads_R1
-    for i, sample_read_fpaths in enumerate(oarsman_args.reads_R1_fpaths):
-        # Make paths absolute
-        oarsman_args.reads_R1_fpaths[i] = list(
-            map(
-                abspath,
-                sample_read_fpaths
-            )
-        )
-        # Check existance
-        non_extant_files = check_files_exist(
-            *oarsman_args.reads_R1_fpaths[i]
-        )
-        if len(non_extant_files) != 0:
-            for fpath in non_extant_files:
-                errors.append(f'File `{fpath}` does not exist')
-            # end for
-        # end if
-    # end for
-
-    # Set reverse reads (R2) fpath (optional, might be empty)
-    if not command_line_args.reads_R2 is None:
-        oarsman_args.reads_R2_fpaths = command_line_args.reads_R2
-        # Iterate over samples -- each sample has its own collection of input files with reads
-        # `i` is a sample index
-        for i, sample_read_fpaths in enumerate(oarsman_args.reads_R2_fpaths):
-            # Make paths absolute
-            oarsman_args.reads_R2_fpaths[i] = list(
-                map(
-                    abspath,
-                    sample_read_fpaths
-                )
-            )
-            # Check existance
-            non_extant_files = check_files_exist(
-                *oarsman_args.reads_R2_fpaths[i]
-            )
-            if len(non_extant_files) != 0:
-                for fpath in non_extant_files:
-                    errors.append(f'File `{fpath}` does not exist')
-                # end for
-            # end if
-        # end for
-
-        # Check if number of forward reads is equal to number of reverse reads
-        # (one cannot mix paired-end and unpaired libraries)
-        if len(oarsman_args.reads_R1_fpaths) != len(oarsman_args.reads_R2_fpaths):
-
-            error_msg = """The number of samples having forward reads ({} samples) is not equal to
-    the number of samples having reverse reads ({} samples).
-Tip: you cannot mix paired-end and unpaired libraries during a single oarsman run.""" \
-                .format(
-                    len(oarsman_args.reads_R1_fpaths),
-                    len(oarsman_args.reads_R2_fpaths)
-                )
-            errors.append(error_msg)
-        else:
-            forw_revr_zip = zip(
-                oarsman_args.reads_R1_fpaths,
-                oarsman_args.reads_R2_fpaths
-            )
-            for i, (forw_fpaths, revr_fpaths) in enumerate(forw_revr_zip):
-                if len(forw_fpaths) != len(revr_fpaths):
-                    forw_basenames = tuple(map(os.path.basename, forw_fpaths))
-                    revr_basenames = tuple(map(os.path.basename, revr_fpaths))
-
-                    error_msg = """Invalid number of input files with reads for the sample
-    with ordinal number {}.
-The number of "forward" files must be equal to the number of "reverse" files
-Forward-read files ({} files): {}.
-Reverse-read files ({} files): {}.""".format(
-                        i+1,
-                        len(forw_fpaths), ', '.join(forw_basenames),
-                        len(revr_fpaths), ', '.join(revr_basenames)
-                    )
-
-                    errors.append(error_msg)
-                # end if
-            # end for
-        # end if
-    # end if
+    oarsman_args = _configure_read_files(argparse_args, oarsman_args, errors)
 
     # Set primers fpath (mandatory)
-    oarsman_args.primers_fpath = abspath(command_line_args.primers_fpath)
+    oarsman_args.primers_fpath = os.path.abspath(argparse_args.primers_fpath)
     if not os.path.isfile(oarsman_args.primers_fpath):
         errors.append(f'File `{oarsman_args.primers_fpath}` does not exist')
     # end if
 
     # Set genome fpath (mandatory)
-    oarsman_args.ref_genome_seq_fpath = abspath(command_line_args.reference_genome)
-    if not os.path.isfile(oarsman_args.ref_genome_seq_fpath):
-        errors.append(f'File `{oarsman_args.ref_genome_seq_fpath}` does not exist')
+    oarsman_args.reference_fpath = os.path.abspath(argparse_args.reference_genome)
+    if not os.path.isfile(oarsman_args.reference_fpath):
+        errors.append(f'File `{oarsman_args.reference_fpath}` does not exist')
     # end if
 
     # Set temporary directory (optional, has a default value)
-    if not command_line_args.outdir is None:
-        oarsman_args.outdir_path = abspath(command_line_args.outdir)
+    if not argparse_args.outdir is None:
+        oarsman_args.outdir_path = os.path.abspath(argparse_args.outdir)
     # end if
     try:
         if not os.path.isdir(oarsman_args.outdir_path):
@@ -266,48 +172,14 @@ Reverse-read files ({} files): {}.""".format(
         )
     # end try
 
-    # Set minimum length for a major amplicon for kromsatel (optional, has a default value)
-    if not command_line_args.kromsatel_ma is None:
-        oarsman_args.min_major_len = command_line_args.kromsatel_ma
-        try:
-            oarsman_args.min_major_len = int(oarsman_args.min_major_len)
-            if oarsman_args.min_major_len < 1:
-                raise ValueError
-        except ValueError:
-            errors.append("""Invalid value passed with option `--kromsatel-ma`: {}
-        This value must be an integer > 0.""".format(oarsman_args.min_major_len))
-        # end try
-    # end if
-
-    # Set minimum length for a minor amplicon for kromsatel (optional, has a default value)
-    if not command_line_args.kromsatel_mi is None:
-        oarsman_args.min_minor_len = command_line_args.kromsatel_mi
-        try:
-            oarsman_args.min_minor_len = int(oarsman_args.min_minor_len)
-            if oarsman_args.min_minor_len < 1:
-                raise ValueError
-        except ValueError:
-            errors.append("""Invalid value passed with option `--kromsatel-mi`: {}
-        This value must be an integer > 0.""".format(oarsman_args.min_minor_len))
-        # end try
-    # end if
-
-    # Set chunk size for kromsatel (optional, has a default value)
-    if not command_line_args.kromsatel_chunk is None:
-        oarsman_args.chunk_size = command_line_args.kromsatel_chunk
-        try:
-            oarsman_args.chunk_size = int(oarsman_args.chunk_size)
-            if oarsman_args.chunk_size < 1:
-                raise ValueError
-        except ValueError:
-            errors.append("""Invalid value passed with option `--kromsatel-chunk`: {}
-        This value must be an integer > 0.""".format(oarsman_args.chunk_size))
-        # end try
+    # Set advanced kromsatel args
+    if not argparse_args.kromsatel_args is None:
+        oarsman_args.kromsatel_args = argparse_args.kromsatel_args
     # end if
 
     # Set number of CPU threads to use (optional, has a default value)
-    if not command_line_args.threads is None:
-        oarsman_args.n_threads = command_line_args.threads
+    if not argparse_args.threads is None:
+        oarsman_args.n_threads = argparse_args.threads
         try:
             oarsman_args.n_threads = int(oarsman_args.n_threads)
             if oarsman_args.n_threads < 1:
@@ -324,71 +196,203 @@ Reverse-read files ({} files): {}.""".format(
             # end if
         # end try
     # end if
-    
 
     return oarsman_args, errors
-# end def _configure_oarsman_args
+# end def
 
 
-def _configure_oarsman_dependencies(command_line_args):
+def _configure_read_files(argparse_args, oarsman_args, errors):
+
+    input_mode_str = _make_input_mode_str(argparse_args)
+    _check_input_mode(input_mode_str)
+
+    if input_mode_str[0] == 'F':
+        oarsman_args.reads_R1_fpaths = \
+            _configure_fpath_collections(argparse_args.reads_R1)
+        _check_input_fpaths(oarsman_args.reads_R1_fpaths)
+        oarsman_args.input_mode = InputModes.IlluminaSE
+
+        if input_mode_str == 'FRl':
+            oarsman_args.reads_R2_fpaths = \
+                _configure_fpath_collections(argparse_args.reads_R2)
+            _check_input_fpaths(oarsman_args.reads_R2_fpaths)
+            _check_paired_reads(
+                oarsman_args.reads_R1_fpaths,
+                oarsman_args.reads_R2_fpaths,
+            )
+            oarsman_args.input_mode = InputModes.IlluminaPE
+        # end if
+
+    elif input_mode_str == 'frL':
+        oarsman_args.reads_long_fpaths = \
+            _configure_fpath_collections(argparse_args.reads_long)
+        _check_input_fpaths(oarsman_args.reads_long_fpaths)
+        oarsman_args.input_mode = InputModes.Nanopore
+    # end if
+
+    return oarsman_args
+# end def
+
+
+def _configure_fpath_collections(fpath_collections):
+    return list(
+        map(
+            fs.abspath_collection,
+            fpath_collections
+        )
+    )
+# end def
+
+
+def _check_input_fpaths(oarsman_collection):
+
+    errors = list()
+    for sample_read_fpaths in oarsman_collection:
+        errors += _check_files_existance(sample_read_fpaths)
+    # end for
+
+    if len(errors) != 0:
+        error_msg = '\nError: the following files do not exist:\n' \
+            + '\n'.join(
+                map(lambda s: '  `{}`'.format(s), errors)
+            )
+        raise FatalError(error_msg)
+    # end if
+# end def
+
+
+def _check_files_existance(file_path_collection):
+
+    errors = list()
+
+    # Check existance
+    non_extant_files = fs.check_files_exist(
+        *file_path_collection
+    )
+    if len(non_extant_files) != 0:
+        for fpath in non_extant_files:
+            errors.append(f'File `{fpath}` does not exist')
+        # end for
+    # end if
+    return errors
+# end def
+
+
+def _check_paired_reads(frw_fpath_collections, rvr_fpath_collections):
+
+    if len(frw_fpath_collections) != len(rvr_fpath_collections):
+        error_msg = '\nError: the number of samples having forward reads ({} samples)\n' \
+            ' is not equal to the number of samples having reverse reads ({} samples).' \
+            'Tip: you cannot mix paired-end and unpaired libraries during a single oarsman run.'
+        raise FatalError(error_msg)
+    # end if
+
+    frw_rvr_zip = zip(
+        frw_fpath_collections,
+        rvr_fpath_collections
+    )
+    sample_number = 1
+    for frw_fpaths, rvr_fpaths in frw_rvr_zip:
+        if len(frw_fpaths) != len(rvr_fpaths):
+            error_msg = 'Invalid number of input files of reads for the sample ' \
+                'with ordinal number {}.\n' \
+                'Forward-read files ({} files): {}.\n' \
+                'Reverse-read files ({} files): {}.\n' \
+                'The number of "forward" files must be equal' \
+                ' to the number of "reverse" files.' \
+                .format(
+                    sample_number,
+                    len(frw_fpaths), ', '.join(fs.basename_collection(frw_fpaths)),
+                    len(rvr_fpaths), ', '.join(fs.basename_collection(rvr_fpaths))
+                )
+            raise FatalError(error_msg)
+        # end if
+        sample_number += 1
+    # end for
+# end def
+
+
+def _check_input_mode(input_mode_str):
+
+    no_data_mode = 'frl'
+    if input_mode_str == no_data_mode:
+        error_msg = '\nError: no input data passed to the program.'
+        raise FatalError(error_msg)
+    # end if
+
+    allowed_modes = {'FRl', 'Frl', 'frL'}
+    if not input_mode_str in allowed_modes:
+        error_msg = '\nError: the program can work only in single mode:\n' \
+            '  either in "short-single-end", "short-paired-end" or "long" mode.'
+        raise FatalError(error_msg)
+    # end if
+# end def
+
+
+def _make_input_mode_str(argparse_args):
+    frw_char  = 'f' if argparse_args.reads_R1   is None else 'F'
+    rvr_char  = 'r' if argparse_args.reads_R2   is None else 'R'
+    long_char = 'l' if argparse_args.reads_long is None else 'L'
+
+    input_mode_str = '{}{}{}'.format(frw_char, rvr_char, long_char)
+
+    return input_mode_str
+# end def
+
+
+def _configure_oarsman_dependencies(argparse_args):
     oarsman_dependencies = OarsmanDependencies()
     errors = list()
 
-    # We will call this function often, so get rid of dots for speed
+    # We will call this function often, so get rid of dots
     abspath = os.path.abspath
 
-
-    # Set kromsatel source dir (mandatory)
-    oarsman_dependencies.kromsatel_dirpath = abspath(command_line_args.kromsatel_dir)
-    if not os.path.isdir(oarsman_dependencies.kromsatel_dirpath):
-        errors.append(f'Directory `{oarsman_dependencies.kromsatel_dirpath}` does not exist')
-    # end if
-
-
-    # Set consensus-highlighter source dir (mandatory)
-    highlighter_dirpath = abspath(command_line_args.highlighter_dir)
-    if not os.path.isdir(highlighter_dirpath):
-        errors.append(f'Directory `{highlighter_dirpath}` does not exist')
-    else:
-        oarsman_dependencies.highlighter_fpath = os.path.join(
-            highlighter_dirpath,
-            'consensus-highlighter.py'
-        )
-        if not os.path.isfile(oarsman_dependencies.highlighter_fpath):
-            errors.append(f'File `{oarsman_dependencies.highlighter_fpath}` does not exist')
-        # end if
-    # end if
-
-
-    # Set seqkit executable path (optional, has a default value)
-    oarsman_dependencies.seqkit_fpath = command_line_args.seqkit
-
-    if not oarsman_dependencies.seqkit_fpath is None:
-        # This block will be run if a path to seqkit executable is specified in the command line
-        if not os.path.exists(oarsman_dependencies.seqkit_fpath):
-            errors.append(f'File `{oarsman_dependencies.seqkit_fpath}` does not exist')
-        elif not os.access(oarsman_dependencies.seqkit_fpath, os.X_OK):
-            errors.append(f"""seqkit file `{oarsman_dependencies.seqkit_fpath}` is not executable
-    (please change permissions for it)""")
+    # Set kromsatel location (mandatory)
+    if not argparse_args.kromsatel is None:
+        oarsman_dependencies.kromsatel_fpath = abspath(argparse_args.kromsatel)
+        if not os.path.isfile(oarsman_dependencies.kromsatel_fpath):
+            errors.append(f'File `{oarsman_dependencies.kromsatel_fpath}` does not exist')
         # end if
     else:
-        # This block will be run if a path to seqkit executable is not specified in the command line
+        # This block will be run if a path to kromsatel.py executable is not specified in the command line
         # So, we will search for it in environment variables
-        seqkit_in_path = util_is_in_path('seqkit')
-        if not seqkit_in_path:
-            errors.append('Cannot find seqkit executable in the PATH environment variable')
+        kromsatel_in_path = fs.util_is_in_path('kromsatel.py')
+        if not kromsatel_in_path:
+            errors.append('Cannot find kromsatel.py executable in the PATH environment variable')
         else:
-            oarsman_dependencies.seqkit_fpath = 'seqkit'
+            oarsman_dependencies.kromsatel_fpath = 'kromsatel.py'
+        # end if
+    # end if
+
+
+    # Set consensus-highlighter script (mandatory)
+    if not argparse_args.highlighter is None:
+        oarsman_dependencies.highlighter_fpath = abspath(argparse_args.highlighter)
+        if not os.path.isfile(highlighter_fpath):
+            errors.append('File `{}` does not exist' \
+                .format(oarsman_dependencies.highlighter_fpath))
+        # end if
+    else:
+        # This block will be run if a path to kromsatel.py executable is not specified in the command line
+        # So, we will search for it in environment variables
+        highlighter_in_path = fs.util_is_in_path('consensus-highlighter.py')
+        if not highlighter_in_path:
+            errors.append(
+                'Cannot find consensus-highlighter.py executable' \
+                ' in the PATH environment variable'
+            )
+        else:
+            oarsman_dependencies.highlighter_fpath = 'consensus-highlighter.py'
         # end if
     # end if
 
     # Set bwa executable path (optional, has a default value)
-    oarsman_dependencies.bwa_fpath = command_line_args.bwa
+    oarsman_dependencies.bwa_fpath = argparse_args.bwa
 
     if not oarsman_dependencies.bwa_fpath is None:
         # This block will be run if a path to bwa executable is specified in the command line
         if not os.path.exists(oarsman_dependencies.bwa_fpath):
-            errors.append(f'File `{oarsman_dependencies.seqkit_fpath}` does not exist')
+            errors.append(f'File `{oarsman_dependencies.bwa_fpath}` does not exist')
         elif not os.access(oarsman_dependencies.bwa_fpath, os.X_OK):
             errors.append(f"""bwa file `{oarsman_dependencies.bwa_fpath}` is not executable
     (please change permissions for it)""")
@@ -396,7 +400,7 @@ def _configure_oarsman_dependencies(command_line_args):
     else:
         # This block will be run if a path to bwa executable is not specified in the command line
         # So, we will search for it in environment variables
-        bwa_in_path = util_is_in_path('bwa')
+        bwa_in_path = fs.util_is_in_path('bwa')
         if not bwa_in_path:
             errors.append('Cannot find bwa executable in the PATH environment variable')
         else:
@@ -405,7 +409,7 @@ def _configure_oarsman_dependencies(command_line_args):
     # end if
 
     # # Set bowtie2 executable path (optional, has a default value)
-    # oarsman_dependencies.bowtie2_fpath = command_line_args.bowtie2
+    # oarsman_dependencies.bowtie2_fpath = argparse_args.bowtie2
 
     # if not oarsman_dependencies.bowtie2_fpath is None:
     #     # This block will be run if a path to bowtie2 executable is specified in the command line
@@ -425,7 +429,7 @@ def _configure_oarsman_dependencies(command_line_args):
     #     # This block will be run if a path to bowtie2 executable is not specified in the command line
     #     # So, we will search for it in environment variables
     #     for util_name in ('bowtie2', 'bowtie2-build'):
-    #         util_in_path = util_is_in_path(util_name)
+    #         util_in_path = fs.util_is_in_path(util_name)
     #         if not util_in_path:
     #             errors.append(f'Cannot find {util_name} executable in the PATH environment variable')
     #         else:
@@ -436,12 +440,12 @@ def _configure_oarsman_dependencies(command_line_args):
 
 
     # Set samtools executable path (optional, has a default value)
-    oarsman_dependencies.samtools_fpath = command_line_args.samtools
+    oarsman_dependencies.samtools_fpath = argparse_args.samtools
 
     if not oarsman_dependencies.samtools_fpath is None:
         # This block will be run if a path to samtools executable is specified in the command line
         if not os.path.exists(oarsman_dependencies.samtools_fpath):
-            errors.append(f'File `{oarsman_dependencies.seqkit_fpath}` does not exist')
+            errors.append(f'File `{oarsman_dependencies.samtools_fpath}` does not exist')
         elif not os.access(oarsman_dependencies.samtools_fpath, os.X_OK):
             errors.append(f"""samtools file `{oarsman_dependencies.samtools_fpath}` is not executable
     (please change permissions for it)""")
@@ -449,7 +453,7 @@ def _configure_oarsman_dependencies(command_line_args):
     else:
         # This block will be run if a path to samtools executable is not specified in the command line
         # So, we will search for it in environment variables
-        samtools_in_path = util_is_in_path('samtools')
+        samtools_in_path = fs.util_is_in_path('samtools')
         if not samtools_in_path:
             errors.append('Cannot find samtools executable in the PATH environment variable')
         else:
@@ -459,12 +463,12 @@ def _configure_oarsman_dependencies(command_line_args):
 
 
     # Set bcftools executable path (optional, has a default value)
-    oarsman_dependencies.bcftools_fpath = command_line_args.bcftools
+    oarsman_dependencies.bcftools_fpath = argparse_args.bcftools
 
     if not oarsman_dependencies.bcftools_fpath is None:
         # This block will be run if a path to samtools executable is specified in the command line
         if not os.path.exists(oarsman_dependencies.bcftools_fpath):
-            errors.append(f'File `{oarsman_dependencies.seqkit_fpath}` does not exist')
+            errors.append(f'File `{oarsman_dependencies.bcftools_fpath}` does not exist')
         elif not os.access(oarsman_dependencies.bcftools_fpath, os.X_OK):
             errors.append(f"""bcftools file `{oarsman_dependencies.samtools_fpath}` is not executable
     (please change permissions for it)""")
@@ -472,7 +476,7 @@ def _configure_oarsman_dependencies(command_line_args):
     else:
         # This block will be run if a path to samtools executable is not specified in the command line
         # So, we will search for it in environment variables
-        bcftools_in_path = util_is_in_path('bcftools')
+        bcftools_in_path = fs.util_is_in_path('bcftools')
         if not bcftools_in_path:
             errors.append('Cannot find bcftools executable in the PATH environment variable')
         else:
@@ -483,17 +487,17 @@ def _configure_oarsman_dependencies(command_line_args):
 
     # Set blastn executable path (optional, has a default value)
     # So, we will search for blastn in environment variables
-    blastn_in_path = util_is_in_path(oarsman_dependencies.blastn_fpath)
+    blastn_in_path = fs.util_is_in_path(oarsman_dependencies.blastn_fpath)
     if not blastn_in_path:
         errors.append('Cannot find blastn executable in the PATH environment variable')
     # end if
 
     # Set makeblastdb executable path (optional, has a default value)
     # So, we will search for makeblastdb in environment variables
-    makeblastdb_in_path = util_is_in_path(oarsman_dependencies.makeblastdb_fpath)
+    makeblastdb_in_path = fs.util_is_in_path(oarsman_dependencies.makeblastdb_fpath)
     if not makeblastdb_in_path:
         errors.append('Cannot find makeblastdb executable in the PATH environment variable')
     # end if
 
     return oarsman_dependencies, errors
-# end def _configure_oarsman_dependencies
+# end def

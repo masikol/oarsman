@@ -1,55 +1,43 @@
 
 import os
-import sys
-import subprocess as sp
 
+from src.runners.shell import launch_command
 
-from src.output_data import AnnotatedSeq
-from src.oarsman_arguments import ConsensAnnotArguments
-from src.oarsman_dependencies import HighlighterDependencies
-
-
-def _configure_highlighter_command(
-        args: ConsensAnnotArguments,
-        dependencies: HighlighterDependencies
-    ):
-
-    command = ' '.join(
-        [
-            'python3', dependencies.highlighter_fpath,
-            f'-f {args.seq_fpath}',
-            f'-b {args.mapping.file_path}',
-            f'-o {args.outfpath}',
-            '-c {}'.format(','.join(args.low_coverages))
-        ]
-    )
-
-    return command
-# end def _configure_bwa_index_command
+from src.data_transfer_objects import SequenceFile
+from src.arguments import ConsensAnnotArguments
+from src.dependencies import HighlighterDependencies
 
 
 def run_highlighter(args, dependencies):
 
-    command_str = _configure_highlighter_command(args, dependencies)
-
     print('Annotating the consensus...')
-    pipe = sp.Popen(command_str, shell=True, stdout=sp.PIPE, stderr=sp.PIPE)
-    stdout_stderr = pipe.communicate()
+    command_str = _configure_highlighter_command(args, dependencies)
+    launch_command(command_str, 'consensus-highlighter')
 
-    if pipe.returncode != 0:
-        print('\nError!')
-        print(f'Script `consensus-highlighter.py` returned a non-zero exit code: {pipe.returncode}')
-        print('Error message:')
-        stderr_index = 1
-        print(stdout_stderr[stderr_index].decode('utf-8'))
-        sys.exit(1)
+    annotated_seq = SequenceFile(args.outfpath)
+    annotated_seq.check_existance()
+
+    return annotated_seq
+# end def
+
+
+def _configure_highlighter_command(highlighter_args, dependencies):
+
+    if os.path.isfile(dependencies.highlighter_fpath):
+        highlighter_script_str = 'python3 {}'.format(dependencies.highlighter_fpath)
+    else:
+        highlighter_script_str = dependencies.highlighter_fpath
     # end if
 
-    if not os.path.exists(args.outfpath):
-        print(f'\nError: GenBank file `{args.outfpath}` does not exist after annotation')
-        print('This file must exist, though. Exitting...')
-        sys.exit(1)
-    # end if
+    command = ' '.join(
+        [
+            highlighter_script_str,
+            f'-f {highlighter_args.seq_fpath}',
+            f'-b {highlighter_args.mapping.alignment_fpath}',
+            f'-o {highlighter_args.outfpath}',
+            '-c {}'.format(','.join(highlighter_args.low_coverages))
+        ]
+    )
 
-    return AnnotatedSeq(args.outfpath)
-# end def run_highlighter
+    return command
+# end def

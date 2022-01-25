@@ -4,10 +4,20 @@ import re
 import gzip
 import shutil
 
+from src.fatal_errors import FatalError
 
-def _file_does_not_exist(fpath):
-    return not os.path.isfile(fpath)
-# end def _file_does_not_exist
+
+def create_directory(dir_path):
+    if not os.path.isdir(dir_path):
+        try:
+            os.makedirs(dir_path)
+        except OSError as err:
+            error_msg = '\nError: cannot create directory `{}`:\n{}' \
+                .format(dir_path, str(err))
+            raise FatalError(error_msg)
+        # end try
+    # end if
+# end def
 
 
 def check_files_exist(*fpaths):
@@ -21,6 +31,30 @@ def check_files_exist(*fpaths):
 
     return non_extant_files
 # end def check_files_exist
+
+
+def _file_does_not_exist(fpath):
+    return not os.path.isfile(fpath)
+# end def _file_does_not_exist
+
+
+def abspath_collection(file_path_collection):
+    return list(
+        map(
+            os.path.abspath,
+            file_path_collection
+        )
+    )
+# end def
+
+def basename_collection(file_path_collection):
+    return list(
+        map(
+            os.path.basename,
+            file_path_collection
+        )
+    )
+# end def
 
 
 def util_is_in_path(util_name):
@@ -107,8 +141,25 @@ def rm_file(fpath):
     try:
         os.unlink(fpath)
     except OSError as err:
-        print(f'Error: cannot remove file `{fpath}` after gzipping')
-        print(str(err))
-        sys.exit(1)
+        error_msg = 'Error: cannot remove file `{}`:\n  {}' \
+            .format(fpath, str(err))
+        raise FatalError(error_msg)
     # end try
-# end def rm_file
+# end def
+
+
+def append_file_to_file(source_fpath, dest_fpath, buffer_size_kbytes=512):
+
+    kbyte_size = 1024 # bytes
+    buffer_size = buffer_size_kbytes * kbyte_size
+
+    with open(source_fpath, 'rb') as source_file, \
+         open(dest_fpath, 'ab') as dest_file:
+
+        chunk = b'non_empty_bytes'
+        while chunk != b'':
+            chunk = source_file.read(buffer_size)
+            dest_file.write(chunk)
+        # end while
+    # end with
+# end def

@@ -1,18 +1,79 @@
 
 import os
-import sys
-import subprocess as sp
 
-from src.oarsman_arguments import CallVariantsArguments
-from src.oarsman_dependencies import BcfVarCallDependencies
-from src.output_data import VariantCallingOutput
+from src.runners.shell import launch_command
+
+from src.arguments import CallVariantsArguments
+from src.dependencies import BcfVarCallDependencies
+from src.data_transfer_objects import VariantCall, \
+                                      VariantCallIndex, \
+                                      SequenceFile
 
 
-def _configure_variant_call_command(
-    args: CallVariantsArguments,
-    dependencies: BcfVarCallDependencies,
-    variants_fpath: str
-):
+def run_bcftools_var_call(args, dependencies):
+
+    print('Calling variants...')
+    baseline_var_call = _call_variants(args, dependencies)
+    baseline_var_call.check_existance()
+
+    baseline_var_call_index = \
+        _index_var_call(baseline_var_call, args, dependencies)
+    baseline_var_call_index.check_existance()
+
+    print('Normalizing variants...')
+    normalized_var_call = _normalize_indels(
+        baseline_var_call,
+        args,
+        dependencies
+    )
+    normalized_var_call.check_existance()
+
+    normalized_var_call_index = \
+        _index_var_call(normalized_var_call, args, dependencies)
+    normalized_var_call_index.check_existance()
+
+    print('Filtering variants...')
+    filtered_var_call = _filter_variants(normalized_var_call, args, dependencies)
+    filtered_var_call.check_existance()
+
+    filtered_var_call_index = \
+        _index_var_call(filtered_var_call, args, dependencies)
+    filtered_var_call_index.check_existance()
+
+    print('Finally making consensus...')
+    consensus_seq = _make_consensus_seq(
+        filtered_var_call,
+        args,
+        dependencies
+    )
+    consensus_seq.check_existance()
+
+    return consensus_seq
+# end def
+
+
+def _call_variants(var_call_args, dependencies):
+    baseline_variants_fpath = _configure_baseline_var_call_fpath(var_call_args)
+    command_str = _configure_variant_call_command(
+        var_call_args,
+        dependencies,
+        baseline_variants_fpath
+    )
+    launch_command(command_str, 'bcftools mpileup|call')
+    return VariantCall(baseline_variants_fpath)
+# end def
+
+
+def _configure_baseline_var_call_fpath(var_call_args):
+    baseline_variants_fpath = os.path.join(
+        var_call_args.outdir_path,
+        f'{var_call_args.sample_name}.bcf'
+    )
+    return baseline_variants_fpath
+# end def
+
+
+def _configure_variant_call_command(var_call_args, dependencies, variants_fpath):
 
     max_coverage = 50000 # reads (for now)
     ploidy = 1 # haploid
@@ -22,49 +83,118 @@ def _configure_variant_call_command(
             dependencies.bcftools_fpath, 'mpileup',
             '-Ob',
             f'--max-depth {max_coverage}', f'--max-idepth {max_coverage}',
-            f'-f {args.reference_fpath}',
-            f'--threads {args.n_threads}',
-            args.alignment_fpath,
+            f'-f {var_call_args.reference_fpath}',
+            f'--threads {var_call_args.n_threads}',
+            var_call_args.alignment_fpath,
             '|',
             dependencies.bcftools_fpath, 'call',
             '-mv', f'--ploidy {ploidy}', '-Ou',
-            f'--threads {args.n_threads}',
+            f'--threads {var_call_args.n_threads}',
             f'-o {variants_fpath}'
         ]
     )
 
     return command
-# end def _configure_bow1tie2_build_command
+# end def
 
 
-def _configure_norm_indels_command(
-    args: CallVariantsArguments,
-    dependencies: BcfVarCallDependencies,
-    variants_fpath: str,
-    norm_variants_fpath: str
-):
+def _index_var_call(baseline_var_call, var_call_args, dependencies):
+    command_str = _configure_index_bcf_command(
+        baseline_var_call,
+        var_call_args,
+        dependencies
+    )
+    launch_command(command_str, 'bcftools index')
+
+    return VariantCallIndex(baseline_var_call.var_call_fpath)
+# end def
+
+
+def _configure_index_bcf_command(var_call, var_call_args, dependencies):
+
+    command = ' '.join(
+        [
+            dependencies.bcftools_fpath, 'index',
+            f'--threads {var_call_args.n_threads}',
+            var_call.var_call_fpath
+        ]
+    )
+
+    return command
+# end def
+
+
+def _normalize_indels(baseline_var_call, var_call_args, dependencies):
+    normalized_var_call_fpath = \
+        _configure_normalized_var_call_fpath(var_call_args)
+
+    command_str = _configure_norm_indels_command(
+        var_call_args,
+        dependencies,
+        baseline_var_call,
+        normalized_var_call_fpath
+    )
+    launch_command(command_str, 'bcftools norm')
+
+    return VariantCall(normalized_var_call_fpath)
+# end def
+
+
+def _configure_normalized_var_call_fpath(var_call_args):
+    normalized_var_call_fpath = os.path.join(
+        var_call_args.outdir_path,
+        f'{var_call_args.sample_name}.norm.bcf'
+    )
+    return normalized_var_call_fpath
+# end def
+
+
+def _configure_norm_indels_command(var_call_args, dependencies, var_call, outfpath):
 
     command = ' '.join(
         [
             dependencies.bcftools_fpath, 'norm',
             '-Ob',
-            f'--threads {args.n_threads}',
-            f'-f {args.reference_fpath}',
-            f'-o {norm_variants_fpath}',
-            variants_fpath
+            f'--threads {var_call_args.n_threads}',
+            f'-f {var_call_args.reference_fpath}',
+            f'-o {outfpath}',
+            var_call.var_call_fpath
         ]
     )
 
     return command
-# end def _configure_norm_indels_command
+# end def
 
 
-def _configure_filter_command(
-    args: CallVariantsArguments,
-    dependencies: BcfVarCallDependencies,
-    norm_variants_fpath: str,
-    filt_variants_fpath: str
-):
+def _filter_variants(normalized_var_call, var_call_args, dependencies):
+    normalized_var_call_fpath = \
+        _configure_filtered_var_call_fpath(var_call_args)
+
+    command_str = _configure_filter_command(
+        var_call_args,
+        dependencies,
+        normalized_var_call,
+        normalized_var_call_fpath
+    )
+    launch_command(command_str, 'bcftools filter')
+
+    return VariantCall(normalized_var_call_fpath)
+# end def
+
+
+def _configure_filtered_var_call_fpath(var_call_args):
+    normalized_var_call_fpath = os.path.join(
+        var_call_args.outdir_path,
+        f'{var_call_args.sample_name}.filt.bcf'
+    )
+    return normalized_var_call_fpath
+# end def
+
+
+def _configure_filter_command(var_call_args,
+                              dependencies,
+                              normalized_var_call,
+                              outfpath):
 
     indel_gap = 10
     spn_gap = 1
@@ -73,286 +203,59 @@ def _configure_filter_command(
         [
             dependencies.bcftools_fpath, 'filter',
             '-Ob',
-            f'--threads {args.n_threads}',
-            f"-e '%QUAL<{args.min_variant_qual}'",
+            f'--threads {var_call_args.n_threads}',
+            f"-e '%QUAL<{var_call_args.min_variant_qual}'",
             f'--IndelGap {indel_gap}',
             f'--SnpGap {spn_gap}',
-            f'-o {filt_variants_fpath}',
-            norm_variants_fpath
+            f'-o {outfpath}',
+            normalized_var_call.var_call_fpath
         ]
     )
 
     return command
-# end def _configure_filter_command
+# end def
 
 
-def _configure_consensus_command(
-    args: CallVariantsArguments,
-    dependencies: BcfVarCallDependencies,
-    filt_variants_fpath: str,
-    consensus_fpath: str
-):
+def _make_consensus_seq(filtered_var_call, var_call_args, dependencies):
+
+    consensus_outfpath = _configure_consensus_outfpath(var_call_args)
+
+    command_str = _configure_consensus_command(
+        var_call_args,
+        dependencies,
+        filtered_var_call,
+        consensus_outfpath
+    )
+
+    launch_command(command_str, 'bcftools consensus')
+
+    return SequenceFile(consensus_outfpath)
+# end def
+
+
+def _configure_consensus_outfpath(var_call_args):
+    consensus_outfpath = os.path.join(
+        var_call_args.consensus_dirpath,
+        f'{var_call_args.sample_name}_consensus.fasta'
+    )
+    return consensus_outfpath
+# end def
+
+
+def _configure_consensus_command(var_call_args,
+                                 dependencies,
+                                 filtered_var_call,
+                                 consensus_outfpath):
 
     command = ' '.join(
         [
             dependencies.bcftools_fpath, 'consensus',
-            f'-f {args.reference_fpath}',
-            f'--prefix {args.sample_name}_',
-            f'-o {consensus_fpath}',
-            filt_variants_fpath
+            f'-f {var_call_args.reference_fpath}',
+            f'--prefix {var_call_args.sample_name}_',
+            f'-o {consensus_outfpath}',
+            filtered_var_call.var_call_fpath
         ]
     )
 
     return command
-# end def _configure_consensus_command
-
-
-def _configure_index_bcf_command(
-    args: CallVariantsArguments,
-    dependencies: BcfVarCallDependencies,
-    file_path_to_index: str,
-):
-
-    command = ' '.join(
-        [
-            dependencies.bcftools_fpath, 'index',
-            f'--threads {args.n_threads}',
-            file_path_to_index
-        ]
-    )
-
-    return command
-# end def _configure_bow1tie2_build_command
-
-
-def run_bcftools_var_call(args, dependencies):
-
-    baseline_variants_fpath = os.path.join(
-        args.var_calls_dirpath,
-        f'{args.sample_name}.bcf'
-    )
-    norm_variants_fpath = os.path.join(
-        args.var_calls_dirpath,
-        f'{args.sample_name}.norm.bcf'
-    )
-    filt_variants_fpath = os.path.join(
-        args.var_calls_dirpath,
-        f'{args.sample_name}.norm.filt.bcf'
-    )
-    bcf_index_extention = '.csi'
-
-    consensus_fpath = os.path.join(
-        args.consensus_dirpath,
-        f'{args.sample_name}_consensus.fasta'
-    )
-
-    # Call variants
-    command_str = _configure_variant_call_command(
-        args,
-        dependencies,
-        baseline_variants_fpath
-    )
-
-    print('Calling variants')
-    pipe = sp.Popen(command_str, shell=True, stderr=sp.PIPE)
-    stdout_stderr = pipe.communicate()
-
-    if pipe.returncode != 0:
-        print('\nError!')
-        print(f'Program `bcftools` returned a non-zero exit code: {pipe.returncode}')
-        print('Error message:')
-        stderr_index = 1
-        print(stdout_stderr[stderr_index].decode('utf-8'))
-        sys.exit(1)
-    # end if
-
-    if not os.path.exists(baseline_variants_fpath):
-        print(f"""\nError: the variant file `{baseline_variants_fpath}`
-    does not exist after variant calling""")
-        print('This file must exist, though. Exitting...')
-        sys.exit(1)
-    # end if
-
-
-    # Index baseline variants file
-    command_str = _configure_index_bcf_command(
-        args,
-        dependencies,
-        baseline_variants_fpath
-    )
-
-    print(f'Indexing file `{baseline_variants_fpath}`')
-    pipe = sp.Popen(command_str, shell=True, stderr=sp.PIPE)
-    stdout_stderr = pipe.communicate()
-
-    if pipe.returncode != 0:
-        print('\nError!')
-        print(f'Program `bcftools` returned a non-zero exit code: {pipe.returncode}')
-        print('Error message:')
-        stderr_index = 1
-        print(stdout_stderr[stderr_index].decode('utf-8'))
-        sys.exit(1)
-    # end if
-
-    baseline_var_call_index = baseline_variants_fpath + bcf_index_extention
-
-    if not os.path.exists(baseline_var_call_index):
-        print(f"""\nError: the index file `{baseline_var_call_index}`
-    of the variant file `{baseline_variants_fpath}` does not exist after indexing""")
-        print('This file must exist, though. Exitting...')
-        sys.exit(1)
-    # end if
-
-
-    # Normalize indels
-    command_str = _configure_norm_indels_command(
-        args,
-        dependencies,
-        baseline_variants_fpath,
-        norm_variants_fpath
-    )
-
-    print('Normalizing indels')
-    pipe = sp.Popen(command_str, shell=True, stderr=sp.PIPE)
-    stdout_stderr = pipe.communicate()
-
-    if pipe.returncode != 0:
-        print('\nError!')
-        print(f'Program `bcftools` returned a non-zero exit code: {pipe.returncode}')
-        print('Error message:')
-        stderr_index = 1
-        print(stdout_stderr[stderr_index].decode('utf-8'))
-        sys.exit(1)
-    # end if
-
-    if not os.path.exists(norm_variants_fpath):
-        print(f"""\nError: the variant file `{baseline_var_call_index}`
-    does not exist after indel normalization""")
-        print('This file must exist, though. Exitting...')
-        sys.exit(1)
-    # end if
-
-
-    # Index normalized variants file
-    command_str = _configure_index_bcf_command(
-        args,
-        dependencies,
-        norm_variants_fpath
-    )
-
-    print(f'Indexing file `{norm_variants_fpath}`')
-    pipe = sp.Popen(command_str, shell=True, stderr=sp.PIPE)
-    stdout_stderr = pipe.communicate()
-
-    if pipe.returncode != 0:
-        print('\nError!')
-        print(f'Program `bcftools` returned a non-zero exit code: {pipe.returncode}')
-        print('Error message:')
-        stderr_index = 1
-        print(stdout_stderr[stderr_index].decode('utf-8'))
-        sys.exit(1)
-    # end if
-
-    norm_var_call_index = norm_variants_fpath + bcf_index_extention
-
-    if not os.path.exists(norm_var_call_index):
-        print(f"""\nError: the index file `{norm_var_call_index}`
-    of the variant file `{norm_variants_fpath}` does not exist after indexing""")
-        print('This file must exist, though. Exitting...')
-        sys.exit(1)
-    # end if
-
-
-    # Filter variants
-    command_str = _configure_filter_command(
-        args,
-        dependencies,
-        norm_variants_fpath,
-        filt_variants_fpath
-    )
-
-    print('Filtering variants')
-    pipe = sp.Popen(command_str, shell=True, stderr=sp.PIPE)
-    stdout_stderr = pipe.communicate()
-
-    if pipe.returncode != 0:
-        print('\nError!')
-        print(f'Program `bcftools` returned a non-zero exit code: {pipe.returncode}')
-        print('Error message:')
-        stderr_index = 1
-        print(stdout_stderr[stderr_index].decode('utf-8'))
-        print(f'Command: "{command_str}"')
-        sys.exit(1)
-    # end if
-
-    if not os.path.exists(filt_variants_fpath):
-        print(f"""\nError: the variant file `{filt_variants_fpath}`
-    does not exist after filtering.""")
-        print('This file must exist, though. Exitting...')
-        sys.exit(1)
-    # end if
-
-
-    # Index filtered variants file
-    command_str = _configure_index_bcf_command(
-        args,
-        dependencies,
-        filt_variants_fpath
-    )
-
-    print(f'Indexing file `{filt_variants_fpath}`')
-    pipe = sp.Popen(command_str, shell=True, stderr=sp.PIPE)
-    stdout_stderr = pipe.communicate()
-
-    if pipe.returncode != 0:
-        print('\nError!')
-        print(f'Program `bcftools` returned a non-zero exit code: {pipe.returncode}')
-        print('Error message:')
-        stderr_index = 1
-        print(stdout_stderr[stderr_index].decode('utf-8'))
-        sys.exit(1)
-    # end if
-
-    filt_var_call_index = filt_variants_fpath + bcf_index_extention
-
-    if not os.path.exists(filt_var_call_index):
-        print(f"""\nError: the index file `{filt_var_call_index}`
-    of the variant file `{filt_variants_fpath}` does not exist after indexing""")
-        print('This file must exist, though. Exitting...')
-        sys.exit(1)
-    # end if
-
-
-    # Make a consensus
-    command_str = _configure_consensus_command(
-        args,
-        dependencies,
-        filt_variants_fpath,
-        consensus_fpath
-    )
-
-    print(f'Making consensus...')
-    pipe = sp.Popen(command_str, shell=True, stderr=sp.PIPE)
-    stdout_stderr = pipe.communicate()
-
-    if pipe.returncode != 0:
-        print('\nError!')
-        print(f'Program `bcftools` returned a non-zero exit code: {pipe.returncode}')
-        print('Error message:')
-        stderr_index = 1
-        print(stdout_stderr[stderr_index].decode('utf-8'))
-        sys.exit(1)
-    # end if
-
-    if not os.path.exists(consensus_fpath):
-        print(f"""\nError: the consensus file `{consensus_fpath}`
-    does not exist after consensus generation""")
-        print('This file must exist, though. Exitting...')
-        sys.exit(1)
-    # end if
-
-
-    return VariantCallingOutput(
-        consensus_fpath
-    )
-# end def run_bcftools_var_call
+# end def

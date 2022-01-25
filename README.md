@@ -16,6 +16,18 @@ Oarsman (**O**verlapping **A**mplicons, **R**eference) is a pipeline for obtaini
 2. The consensus sequence with low-coverage regions annotated (files `consensus/*annotated_consensus.gbk`).
 3. Various temporary files: reads cleaned by kromsatel, `.bam` mapping file, `.bcf` variant file etc.
 
+### Dependencies
+
+Oarsman is written in Python 3 and won't work on Python 2.
+
+Oarsman is a pipeline, so it has an awfully massive bunch of dependencies.
+
+1. kromsatel (version 2.0.a or later). Might be in PATH or specified with option `--kromsatel`.
+2. consensus-highlighter (version 2.1.a or later). Might be in PATH or specified with option `--highlighter`.
+3. samtools. Might be in PATH or specified with option `--samtools`.
+4. bcftools. Might be in PATH or specified with option `--bcftools`.
+5. BLAST+. Must be in PATH.
+6. bwa. Might be in PATH or specified with option `--bwa`.
 
 ## Usage
 
@@ -26,8 +38,6 @@ python3 oarsman.py \
     -1 20_S30_L001.fastq.gz \                           # unpaired reads
     -p nCov-2019-alt_primers.csv \                      # ARTIC primers
     -r Wuhan-Hu-1-compele-genome.fasta \                # Reference sequence
-    --kromsatel-dir /some/dir/kromsatel \               # Kromsatel source directory
-    --highlighter-dir /some/dir/consensus-highlighter \ # consensus-highlighter source directory
     -t 4 \                                              # CPU threads
     -o my_outdir                                        # Output directory
 ```
@@ -40,8 +50,6 @@ python3 oarsman.py \
     -1 1_S7_L001.fastq.gz \                             # unpaired reads, sample 2
     -p nCov-2019-alt_primers.csv \                      # ARTIC primers
     -r Wuhan-Hu-1-compele-genome.fasta \                # Reference sequence
-    --kromsatel-dir /some/dir/kromsatel \               # Kromsatel source directory
-    --highlighter-dir /some/dir/consensus-highlighter \ # consensus-highlighter source directory
     -t 4 \                                              # CPU threads
     -o my_outdir                                        # Output directory
 ```
@@ -54,8 +62,6 @@ python3 oarsman.py \
     -2 20_S30_L001_R2_001.fastq.gz \                    # reverse (R2) reads
     -p nCov-2019-alt_primers.csv \                      # ARTIC primers
     -r Wuhan-Hu-1-compele-genome.fasta \                # Reference sequence
-    --kromsatel-dir /some/dir/kromsatel \ # Kromsatel source directory
-    --highlighter-dir /some/dir/consensus-highlighter \ # consensus-highlighter source directory
     -t 4 \                                              # CPU threads
     -o my_outdir                                        # Output directory
 ```
@@ -70,8 +76,6 @@ python3 oarsman.py \
     -2 1_S7_L001_R2_001.fastq.gz \                      # reverse (R2) reads, sample 2
     -p nCov-2019-alt_primers.csv \                      # ARTIC primers
     -r Wuhan-Hu-1-compele-genome.fasta \                # Reference sequence
-    --kromsatel-dir /some/dir/kromsatel \               # Kromsatel source directory
-    --highlighter-dir /some/dir/consensus-highlighter \ # consensus-highlighter source directory
     -t 4 \                                              # CPU threads
     -o my_outdir                                        # Output directory
 ```
@@ -86,19 +90,22 @@ python3 oarsman.py \
     -2 1_S7_L001_R2_001_part_one.fastq.gz 1_S7_L001_R2_001_part_two.fastq.gz \
     -p nCov-2019-alt_primers.csv \
     -r Wuhan-Hu-1-compele-genome.fasta \
-    --kromsatel-dir /some/dir/kromsatel \
-    --highlighter-dir /some/dir/consensus-highlighter \ # consensus-highlighter source directory
     -t 4 \
     -o my_outdir
 ```
 
-## Dependencies
+### With some dependencies
 
-1. kromsatel
-2. consensus-highlighter (version 2.0.a or later)
-3. Python packages `pandas` and `numpy`.
-4. samtools
-5. bcftools
-6. BLAST+
-7. bwa
-8. seqkit
+Here, some dependencies (kromsatel, consensus-highlighter, and bwa) are specified in command line instead of using PATH environment variable.
+
+```
+python3 oarsman.py \
+    -1 20_S30_L001.fastq.gz \
+    -p nCov-2019-alt_primers.csv \
+    -r Wuhan-Hu-1-compele-genome.fasta \
+    --kromsatel /some/dir/kromsatel/kromsatel.py \                            # Kromsatel executable file
+    --highlighter /some/dir/consensus-highlighter/consensus-highlighter.py \  # consensus-highlighter executable script
+    --bwa /some/dir/bwa \
+    -t 4 \
+    -o my_outdir
+```
