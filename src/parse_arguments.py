@@ -296,10 +296,12 @@ def _check_input_mode(input_mode_str):
         raise FatalError(error_msg)
     # end if
 
-    allowed_modes = {'FRl', 'Frl', 'frL'}
+    # # TODO : add long reads support
+    # allowed_modes = {'FRl', 'Frl', 'frL'}
+    allowed_modes = {'FRl', 'Frl'}
     if not input_mode_str in allowed_modes:
-        error_msg = '\nError: the program can work only in single mode:\n' \
-            '  either in "short-single-end", "short-paired-end" or "long" mode.'
+        error_msg = '\nError: the program can work only in one of the following modes:\n' \
+            '  "short-single-end" or "short-paired-end" mode.'
         raise FatalError(error_msg)
     # end if
 # end def

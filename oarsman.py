@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = '0.2.a'
+__version__ = '0.2.b'
 __last_update_date__ = '2022-01-25'
 # __author__ = 'Maxim Sikolenko'
 
@@ -29,8 +29,10 @@ import os
 
 print(f'\n  |=== {os.path.basename(__file__)} v{__version__} ===|\n')
 
+
 from src.main import main
 
 if __name__ == '__main__':
-    main()
+    result_status = main()
+    sys.exit(result_status)
 # end if

@@ -35,14 +35,23 @@ from src.dependencies import HighlighterDependencies
 
 
 def main():
-
-    # Parse command line arguments
     try:
-        oarsman_args, oarsman_dependencies = parse_arguments()
+        _run_pipeline()
     except FatalError as err:
         print_err(str(err))
-        sys.exit(1)
+        result_status = 1
+    else:
+        result_status = 0
     # end try
+
+    return result_status
+# end def
+
+
+def _run_pipeline():
+
+    # Parse command line arguments
+    oarsman_args, oarsman_dependencies = parse_arguments()
 
     reference_fpath = oarsman_args.reference_fpath
 
