@@ -347,7 +347,7 @@ def _configure_oarsman_dependencies(argparse_args):
     # We will call this function often, so get rid of dots
     abspath = os.path.abspath
 
-    # Set kromsatel location (mandatory)
+    # Set kromsatel location
     if not argparse_args.kromsatel is None:
         oarsman_dependencies.kromsatel_fpath = abspath(argparse_args.kromsatel)
         if not os.path.isfile(oarsman_dependencies.kromsatel_fpath):
@@ -365,10 +365,10 @@ def _configure_oarsman_dependencies(argparse_args):
     # end if
 
 
-    # Set consensus-highlighter script (mandatory)
+    # Set consensus-highlighter location
     if not argparse_args.highlighter is None:
         oarsman_dependencies.highlighter_fpath = abspath(argparse_args.highlighter)
-        if not os.path.isfile(highlighter_fpath):
+        if not os.path.isfile(oarsman_dependencies.highlighter_fpath):
             errors.append('File `{}` does not exist' \
                 .format(oarsman_dependencies.highlighter_fpath))
         # end if
