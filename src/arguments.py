@@ -43,8 +43,7 @@ class OarsmanArguments:
         self.outdir_path = os.path.join(os.getcwd(), 'oarsman_outdir')
         self.n_threads = 1 # thread
 
-        self._set_output_subdirs()
-        self._create_output_subdirs()
+        self._set_output_subdir_names()
     # end def
 
 
@@ -62,20 +61,31 @@ class OarsmanArguments:
         # end if
     # end def
 
-    def _set_output_subdirs(self):
-        self.output_subdirs = {
-            'kromsatel_outdir': os.path.join(self.outdir_path, 'kromsatel_outdir'),
-            'fasta_indicies':   os.path.join(self.outdir_path, 'fasta_indicies'),
-            'read_mappings':    os.path.join(self.outdir_path, 'read_mappings'),
-            'variant_calls':    os.path.join(self.outdir_path, 'variant_calls'),
-            'consensus':        os.path.join(self.outdir_path, 'consensus'),
-        }
+    def _set_output_subdir_names(self):
+        self.kromsatel_dirname = 'kromsatel_outdir'
+        self.fasta_indicies_dirname = 'fasta_indicies'
+        self.read_mappings_dirname = 'read_mappings'
+        self.variant_calls_dirname = 'variant_calls'
+        self.consensus_dirname = 'consensus'
     # end def
 
 
-    def _create_output_subdirs(self):
-        for subdir_path in self.output_subdirs.values():
-            fs.create_directory(subdir_path)
+    def create_output_dir(self):
+        fs.create_directory(self.outdir_path)
+        subdir_names = (
+            self.kromsatel_dirname,
+            self.fasta_indicies_dirname,
+            self.read_mappings_dirname,
+            self.variant_calls_dirname,
+            self.consensus_dirname,
+        )
+        for dir_name in subdir_names:
+            fs.create_directory(
+                os.path.join(
+                    self.outdir_path,
+                    dir_name
+                )
+            )
         # end for
     # end def
 
@@ -100,7 +110,7 @@ class OarsmanArguments:
             reads_R1_fpaths,
             reads_R2_fpaths,
             reads_long_fpaths,
-            self.output_subdirs['kromsatel_outdir']
+            os.path.join(self.outdir_path, self.kromsatel_dirname)
         )
     # end def
 
@@ -144,8 +154,8 @@ class OarsmanArguments:
             alignment_fpath,
             self.reference_fpath,
             self.min_variant_qual,
-            self.output_subdirs['variant_calls'],
-            self.output_subdirs['consensus'],
+            os.path.join(self.outdir_path, self.variant_calls_dirname),
+            os.path.join(self.outdir_path, self.consensus_dirname),
             self.n_threads
         )
     # end def
@@ -153,7 +163,8 @@ class OarsmanArguments:
     def get_consens_annot_args(self, sample_name, seq_fpath, mapping):
 
         outfpath = os.path.join(
-            self.output_subdirs['consensus'],
+            self.outdir_path,
+            self.consensus_dirname,
             f'{sample_name}_annotated_consensus.gbk'
         )
 
@@ -204,8 +215,14 @@ class ReadMappingArguments:
         self.reads = reads
         self.input_mode = oarsman_args.input_mode
         self.reference_fpath = reference_seq_fpath
-        self.outdir_path = oarsman_args.output_subdirs['read_mappings']
-        self.index_dir_path = oarsman_args.output_subdirs['fasta_indicies']
+        self.outdir_path = os.path.join(
+            oarsman_args.outdir_path,
+            oarsman_args.read_mappings_dirname
+        )
+        self.index_dir_path = os.path.join(
+            oarsman_args.outdir_path, 
+            oarsman_args.fasta_indicies_dirname
+        )
         self.output_suffix = output_suffix
         self.n_threads = oarsman_args.n_threads
     # end def

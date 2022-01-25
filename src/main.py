@@ -14,14 +14,9 @@ from src.dependencies import KromsatelDependencies
 from src.data_transfer_objects import KromsatelResult
 
 from src.arguments import ReadMappingArguments
-# from src.data_transfer_objects import ReadMappingOutput
-
-# from src.runners.bowtie2_runner import run_bowtie2
-# from src.dependencies import Bowtie2Dependencies
 
 from src.runners.bwa_runner import run_bwa
 from src.dependencies import BwaDependencies
-
 
 from src.runners.aln_postprocess_runner import run_aln_postprocess
 from src.arguments import AlnPostprocessArguments
@@ -49,7 +44,6 @@ def main():
         sys.exit(1)
     # end try
 
-
     reference_fpath = oarsman_args.reference_fpath
 
     # From this moment we will iterate over samples
@@ -57,10 +51,6 @@ def main():
     for i_sample in range(n_samples):
 
         sample = Sample(oarsman_args.reads_R1_fpaths[i_sample][0], i_sample)
-
-        # sample_name = fastq_fpath_to_sample_name(
-        #     oarsman_args.reads_R1_fpaths[i_sample][0]
-        # )
 
         print(
             '  \n|=== Processing sample #{}/{}: {} ===|' \
@@ -72,7 +62,6 @@ def main():
             oarsman_dependencies,
             sample
         )
-
 
         mapping = _map_reads(
             oarsman_args,
@@ -120,7 +109,7 @@ def main():
 
         print('Annotated consensus: `{}`'.format(consensus_annotation.file_path))
     # end for
-# end def main
+# end def
 
 
 def _clean_reads(oarsman_args, oarsman_dependencies, sample):
@@ -137,7 +126,7 @@ def _clean_reads(oarsman_args, oarsman_dependencies, sample):
     )
 
     return kromsatel_output
-# end def _clean_reads
+# end def
 
 
 def _map_reads(
@@ -197,4 +186,4 @@ def _annotate_consensus(oarsman_args, oarsman_dependencies, sample, seq_fpath, m
     )
 
     return annotated_seq
-# end def _annotate_consensus
+# end def

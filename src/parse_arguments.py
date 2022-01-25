@@ -86,12 +86,6 @@ def parse_arguments():
         required=False
     )
 
-    # parser.add_argument(
-    #     '--bowtie2',
-    #     help='path to bowtie2 executable',
-    #     required=False
-    # )
-
     parser.add_argument(
         '--samtools',
         help='path to samtools executable',
@@ -146,56 +140,38 @@ def _configure_oarsman_args(argparse_args):
 
     oarsman_args = _configure_read_files(argparse_args, oarsman_args, errors)
 
-    # Set primers fpath (mandatory)
+    # Set primers fpath
     oarsman_args.primers_fpath = os.path.abspath(argparse_args.primers_fpath)
     if not os.path.isfile(oarsman_args.primers_fpath):
-        errors.append(f'File `{oarsman_args.primers_fpath}` does not exist')
+        errors.append(
+            'File `{}` does not exist'.format(oarsman_args.primers_fpath)
+        )
     # end if
 
-    # Set genome fpath (mandatory)
+    # Set reference fpath
     oarsman_args.reference_fpath = os.path.abspath(argparse_args.reference_genome)
     if not os.path.isfile(oarsman_args.reference_fpath):
-        errors.append(f'File `{oarsman_args.reference_fpath}` does not exist')
+        errors.append(
+            'File `{}` does not exist'.format(oarsman_args.reference_fpath)
+        )
     # end if
 
-    # Set temporary directory (optional, has a default value)
+    # Set and create output directory
     if not argparse_args.outdir is None:
         oarsman_args.outdir_path = os.path.abspath(argparse_args.outdir)
     # end if
-    try:
-        if not os.path.isdir(oarsman_args.outdir_path):
-            os.makedirs(oarsman_args.outdir_path)
-        # end if
-    except OSError as err:
-        errors.append('Cannot create temporary directory `{}`: {}' \
-            .format(oarsman_args.outdir_path, err)
-        )
-    # end try
+    oarsman_args.create_output_dir()
 
     # Set advanced kromsatel args
     if not argparse_args.kromsatel_args is None:
         oarsman_args.kromsatel_args = argparse_args.kromsatel_args
     # end if
 
-    # Set number of CPU threads to use (optional, has a default value)
-    if not argparse_args.threads is None:
-        oarsman_args.n_threads = argparse_args.threads
-        try:
-            oarsman_args.n_threads = int(oarsman_args.n_threads)
-            if oarsman_args.n_threads < 1:
-                raise ValueError
-        except ValueError:
-            errors.append("""Invalid value passed with option `-t/--threads`: {}
-        This value must be an integer > 0.""".format(oarsman_args.n_threads))
-        else:
-            if oarsman_args.n_threads > len(os.sched_getaffinity(0)):
-                print(f'Your system has only {len(os.sched_getaffinity(0))} CPU threads available')
-                print('Switching number of threads from {} to {}' \
-                    .format(oarsman_args.n_threads), len(os.shed_getaffinity(0)))
-                oarsman_args.n_threads = len(os.sched_getaffinity(0))
-            # end if
-        # end try
-    # end if
+    oarsman_args.n_threads = _get_n_threads(
+        argparse_args,
+        oarsman_args.n_threads,
+        errors
+    )
 
     return oarsman_args, errors
 # end def
@@ -340,164 +316,162 @@ def _make_input_mode_str(argparse_args):
 # end def
 
 
+def _get_n_threads(argparse_args, default_value, errors):
+
+    n_threads_specified = not argparse_args.threads is None
+    if not n_threads_specified:
+        return default_value
+    # end if
+
+    try:
+        n_threads = int(argparse_args.threads)
+        if n_threads < 1:
+            raise ValueError
+    except ValueError:
+        error_msg = 'Invalid value passed with option `-t/--threads`: {}\n' \
+            'This value must be an integer > 0.'.format(argparse_args.threads)
+        errors.append(error_msg)
+        return None
+    else:
+        if n_threads > len(os.sched_getaffinity(0)):
+            print(
+                'Your system has only {} CPU threads available' \
+                    .format(len(os.sched_getaffinity(0)))
+            )
+            print(
+                'Switching number of threads from {} to {}' \
+                    .format(
+                        n_threads,
+                        len(os.sched_getaffinity(0))
+                    )
+            )
+            n_threads = len(os.sched_getaffinity(0))
+        # end if
+    # end try
+
+    return n_threads
+# end def
+
+
 def _configure_oarsman_dependencies(argparse_args):
+
     oarsman_dependencies = OarsmanDependencies()
     errors = list()
 
-    # We will call this function often, so get rid of dots
-    abspath = os.path.abspath
+    oarsman_dependencies.kromsatel_fpath = \
+        _get_dependency_fpath_script(
+            argparse_args.kromsatel,
+            'kromsatel.py',
+            errors
+        )
 
-    # Set kromsatel location
-    if not argparse_args.kromsatel is None:
-        oarsman_dependencies.kromsatel_fpath = abspath(argparse_args.kromsatel)
-        if not os.path.isfile(oarsman_dependencies.kromsatel_fpath):
-            errors.append(f'File `{oarsman_dependencies.kromsatel_fpath}` does not exist')
-        # end if
-    else:
-        # This block will be run if a path to kromsatel.py executable is not specified in the command line
-        # So, we will search for it in environment variables
-        kromsatel_in_path = fs.util_is_in_path('kromsatel.py')
-        if not kromsatel_in_path:
-            errors.append('Cannot find kromsatel.py executable in the PATH environment variable')
-        else:
-            oarsman_dependencies.kromsatel_fpath = 'kromsatel.py'
-        # end if
-    # end if
+    oarsman_dependencies.highlighter_fpath = \
+        _get_dependency_fpath_script(
+            argparse_args.highlighter,
+            'consensus-highlighter.py',
+            errors
+        )
 
+    oarsman_dependencies.bwa_fpath = \
+        _get_dependency_fpath_binary(
+            argparse_args.bwa,
+            'bwa',
+            errors
+        )
 
-    # Set consensus-highlighter location
-    if not argparse_args.highlighter is None:
-        oarsman_dependencies.highlighter_fpath = abspath(argparse_args.highlighter)
-        if not os.path.isfile(oarsman_dependencies.highlighter_fpath):
-            errors.append('File `{}` does not exist' \
-                .format(oarsman_dependencies.highlighter_fpath))
-        # end if
-    else:
-        # This block will be run if a path to kromsatel.py executable is not specified in the command line
-        # So, we will search for it in environment variables
-        highlighter_in_path = fs.util_is_in_path('consensus-highlighter.py')
-        if not highlighter_in_path:
-            errors.append(
-                'Cannot find consensus-highlighter.py executable' \
-                ' in the PATH environment variable'
-            )
-        else:
-            oarsman_dependencies.highlighter_fpath = 'consensus-highlighter.py'
-        # end if
-    # end if
+    oarsman_dependencies.samtools_fpath = \
+        _get_dependency_fpath_binary(
+            argparse_args.samtools,
+            'samtools',
+            errors
+        )
 
-    # Set bwa executable path (optional, has a default value)
-    oarsman_dependencies.bwa_fpath = argparse_args.bwa
+    oarsman_dependencies.bcftools_fpath = \
+        _get_dependency_fpath_binary(
+            argparse_args.bcftools,
+            'bcftools',
+            errors
+        )
 
-    if not oarsman_dependencies.bwa_fpath is None:
-        # This block will be run if a path to bwa executable is specified in the command line
-        if not os.path.exists(oarsman_dependencies.bwa_fpath):
-            errors.append(f'File `{oarsman_dependencies.bwa_fpath}` does not exist')
-        elif not os.access(oarsman_dependencies.bwa_fpath, os.X_OK):
-            errors.append(f"""bwa file `{oarsman_dependencies.bwa_fpath}` is not executable
-    (please change permissions for it)""")
-        # end if
-    else:
-        # This block will be run if a path to bwa executable is not specified in the command line
-        # So, we will search for it in environment variables
-        bwa_in_path = fs.util_is_in_path('bwa')
-        if not bwa_in_path:
-            errors.append('Cannot find bwa executable in the PATH environment variable')
-        else:
-            oarsman_dependencies.bwa_fpath = 'bwa'
-        # end if
-    # end if
-
-    # # Set bowtie2 executable path (optional, has a default value)
-    # oarsman_dependencies.bowtie2_fpath = argparse_args.bowtie2
-
-    # if not oarsman_dependencies.bowtie2_fpath is None:
-    #     # This block will be run if a path to bowtie2 executable is specified in the command line
-    #     bowtie2_binaries = (
-    #         oarsman_dependencies.bowtie2_fpath,
-    #         oarsman_dependencies.bowtie2_fpath+'-build'
-    #     )
-    #     for util_fpath in bowtie2_binaries:
-    #         if not os.path.exists(util_fpath):
-    #             errors.append(f'File `{util_fpath}` does not exist')
-    #         elif not os.access(util_fpath, os.X_OK):
-    #             errors.append(f"""File `{util_fpath}` is not executable
-    #     (please change permissions for it)""")
-    #         # end if
-    #     # end for
-    # else:
-    #     # This block will be run if a path to bowtie2 executable is not specified in the command line
-    #     # So, we will search for it in environment variables
-    #     for util_name in ('bowtie2', 'bowtie2-build'):
-    #         util_in_path = fs.util_is_in_path(util_name)
-    #         if not util_in_path:
-    #             errors.append(f'Cannot find {util_name} executable in the PATH environment variable')
-    #         else:
-    #             oarsman_dependencies.bowtie2_fpath = 'bowtie2'
-    #         # end if
-    #     # end for
-    # # end if
-
-
-    # Set samtools executable path (optional, has a default value)
-    oarsman_dependencies.samtools_fpath = argparse_args.samtools
-
-    if not oarsman_dependencies.samtools_fpath is None:
-        # This block will be run if a path to samtools executable is specified in the command line
-        if not os.path.exists(oarsman_dependencies.samtools_fpath):
-            errors.append(f'File `{oarsman_dependencies.samtools_fpath}` does not exist')
-        elif not os.access(oarsman_dependencies.samtools_fpath, os.X_OK):
-            errors.append(f"""samtools file `{oarsman_dependencies.samtools_fpath}` is not executable
-    (please change permissions for it)""")
-        # end if
-    else:
-        # This block will be run if a path to samtools executable is not specified in the command line
-        # So, we will search for it in environment variables
-        samtools_in_path = fs.util_is_in_path('samtools')
-        if not samtools_in_path:
-            errors.append('Cannot find samtools executable in the PATH environment variable')
-        else:
-            oarsman_dependencies.samtools_fpath = 'samtools'
-        # end if
-    # end if
-
-
-    # Set bcftools executable path (optional, has a default value)
-    oarsman_dependencies.bcftools_fpath = argparse_args.bcftools
-
-    if not oarsman_dependencies.bcftools_fpath is None:
-        # This block will be run if a path to samtools executable is specified in the command line
-        if not os.path.exists(oarsman_dependencies.bcftools_fpath):
-            errors.append(f'File `{oarsman_dependencies.bcftools_fpath}` does not exist')
-        elif not os.access(oarsman_dependencies.bcftools_fpath, os.X_OK):
-            errors.append(f"""bcftools file `{oarsman_dependencies.samtools_fpath}` is not executable
-    (please change permissions for it)""")
-        # end if
-    else:
-        # This block will be run if a path to samtools executable is not specified in the command line
-        # So, we will search for it in environment variables
-        bcftools_in_path = fs.util_is_in_path('bcftools')
-        if not bcftools_in_path:
-            errors.append('Cannot find bcftools executable in the PATH environment variable')
-        else:
-            oarsman_dependencies.bcftools_fpath = 'bcftools'
-        # end if
-    # end if
-
-
-    # Set blastn executable path (optional, has a default value)
-    # So, we will search for blastn in environment variables
-    blastn_in_path = fs.util_is_in_path(oarsman_dependencies.blastn_fpath)
-    if not blastn_in_path:
-        errors.append('Cannot find blastn executable in the PATH environment variable')
-    # end if
-
-    # Set makeblastdb executable path (optional, has a default value)
-    # So, we will search for makeblastdb in environment variables
-    makeblastdb_in_path = fs.util_is_in_path(oarsman_dependencies.makeblastdb_fpath)
-    if not makeblastdb_in_path:
-        errors.append('Cannot find makeblastdb executable in the PATH environment variable')
-    # end if
+    _check_blastplus_in_path(oarsman_dependencies, errors)
 
     return oarsman_dependencies, errors
+# end def
+
+
+def _get_dependency_fpath_binary(argparse_dependency_arg,
+                                 executable_name,
+                                 errors):
+
+    dependency_passed_with_cmd = not argparse_dependency_arg is None
+    dependency_fpath = argparse_dependency_arg
+
+    if dependency_passed_with_cmd:
+        dependency_fpath = os.path.abspath(dependency_fpath)
+        if not os.path.exists(dependency_fpath):
+            errors.append('File `{}` does not exist'.format(dependency_fpath))
+        elif not os.access(dependency_fpath, os.X_OK):
+            errors.append('File `{}` is not executable ' \
+                '(please change permissions for it)'.format(dependency_fpath))
+        # end if
+    else:
+        dependency_in_path = fs.util_is_in_path(executable_name)
+        if dependency_in_path:
+            dependency_fpath = executable_name
+        else:
+            errors.append(
+                'Cannot find {} executable in the PATH environment variable' \
+                    .format(executable_name)
+            )
+        # end if
+    # end if
+
+    return dependency_fpath
+# end def
+
+
+def _get_dependency_fpath_script(argparse_dependency_arg,
+                                 executable_name,
+                                 errors):
+
+    dependency_passed_with_cmd = not argparse_dependency_arg is None
+    dependency_fpath = argparse_dependency_arg
+
+    if dependency_passed_with_cmd:
+        dependency_fpath = os.path.abspath(dependency_fpath)
+        if not os.path.exists(dependency_fpath):
+            errors.append('File `{}` does not exist'.format(dependency_fpath))
+        # end if
+    else:
+        dependency_in_path = fs.util_is_in_path(executable_name)
+        if dependency_in_path:
+            dependency_fpath = executable_name
+        else:
+            errors.append(
+                'Cannot find {} executable in the PATH environment variable' \
+                    .format(executable_name)
+            )
+        # end if
+    # end if
+
+    return dependency_fpath
+# end def
+
+
+def _check_blastplus_in_path(oarsman_dependencies, errors):
+
+    executables = (
+        oarsman_dependencies.blastn_fpath,
+        oarsman_dependencies.makeblastdb_fpath,
+    )
+
+    for executable in executables:
+        found_in_path = fs.util_is_in_path(executable)
+        if not found_in_path:
+            errors.append(
+                'Cannot find {} executable in the PATH environment variable' \
+                    .format(executable)
+            )
+        # end if
+    # end for
 # end def
