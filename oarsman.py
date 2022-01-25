@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-__version__ = '0.1.a'
-__last_update_date__ = '2021-12-XX'
+__version__ = '0.2.a'
+__last_update_date__ = '2022-01-25'
 # __author__ = 'Maxim Sikolenko'
 
 # |===== Check python interpreter version. =====|
