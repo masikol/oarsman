@@ -26,7 +26,7 @@ Oarsman is a pipeline, so it has an awfully massive bunch of dependencies.
 
 1. kromsatel (version 2.0.a or later). Might be in PATH or specified with option `--kromsatel`.
 2. consensus-highlighter (version 2.1.a or later). Might be in PATH or specified with option `--highlighter`.
-3. samtools. Might be in PATH or specified with option `--samtools`.
+3. samtools (version 1.12 or later). Might be in PATH or specified with option `--samtools`.
 4. bcftools. Might be in PATH or specified with option `--bcftools`.
 5. BLAST+. Must be in PATH.
 6. bwa. Might be in PATH or specified with option `--bwa`.

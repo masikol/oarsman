@@ -52,6 +52,7 @@ def _run_pipeline():
 
     # Parse command line arguments
     oarsman_args, oarsman_dependencies = parse_arguments()
+    oarsman_dependencies.check_versions()
 
     reference_fpath = oarsman_args.reference_fpath
 
