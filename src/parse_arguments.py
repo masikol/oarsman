@@ -1,6 +1,5 @@
 
 import os
-import sys
 import argparse
 
 import src.filesystem as fs
@@ -138,7 +137,7 @@ def _configure_oarsman_args(argparse_args):
     oarsman_args = OarsmanArguments()
     errors = list()
 
-    oarsman_args = _configure_read_files(argparse_args, oarsman_args, errors)
+    oarsman_args = _configure_read_files(argparse_args, oarsman_args)
 
     # Set primers fpath
     oarsman_args.primers_fpath = os.path.abspath(argparse_args.primers_fpath)
@@ -177,7 +176,7 @@ def _configure_oarsman_args(argparse_args):
 # end def
 
 
-def _configure_read_files(argparse_args, oarsman_args, errors):
+def _configure_read_files(argparse_args, oarsman_args):
 
     input_mode_str = _make_input_mode_str(argparse_args)
     _check_input_mode(input_mode_str)

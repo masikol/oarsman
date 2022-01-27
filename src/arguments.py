@@ -1,9 +1,7 @@
 
 import os
-import sys
 
 import src.filesystem as fs
-from src.reads import Reads
 from src.input_modes import InputModes
 from src.fatal_errors import FatalError
 
@@ -13,7 +11,6 @@ class OarsmanArguments:
     def __init__(self):
 
         # Input data
-        # Reads
         self.reads_R1_fpaths = None
         self.reads_R2_fpaths = None
         self.reads_long_fpaths = None
