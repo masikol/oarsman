@@ -150,8 +150,27 @@ class OarsmanArguments:
             sample_name,
             alignment_fpath,
             self.reference_fpath,
-            self.min_variant_qual,
             os.path.join(self.outdir_path, self.variant_calls_dirname),
+            self.n_threads
+        )
+    # end def
+
+    def get_var_call_postproc_args(self, sample_name, raw_var_call):
+        return VarCallPostprocArgs(
+            sample_name,
+            raw_var_call,
+            self.reference_fpath,
+            self.min_variant_qual,
+            os.path.join(self.outdir_path, self.consensus_dirname),
+            self.n_threads
+        )
+    # end def
+
+    def get_make_consensus_args(self, sample_name, var_call):
+        return ConsensMakingArgs(
+            sample_name,
+            var_call,
+            self.reference_fpath,
             os.path.join(self.outdir_path, self.consensus_dirname),
             self.n_threads
         )
@@ -253,18 +272,55 @@ class CallVariantsArguments:
         sample_name,
         alignment_fpath,
         reference_fpath,
-        min_variant_qual,
         outdir_path,
-        consensus_dirpath,
         n_threads
     ):
 
         self.sample_name = sample_name
         self.alignment_fpath = alignment_fpath
         self.reference_fpath = reference_fpath
+        self.outdir_path = outdir_path
+        self.n_threads = n_threads
+    # end def
+# end class
+
+
+class VarCallPostprocArgs:
+
+    def __init__(
+        self,
+        sample_name,
+        raw_var_call,
+        reference_fpath,
+        min_variant_qual,
+        outdir_path,
+        n_threads
+    ):
+
+        self.sample_name = sample_name
+        self.raw_var_call = raw_var_call
+        self.reference_fpath = reference_fpath
         self.min_variant_qual = min_variant_qual
         self.outdir_path = outdir_path
-        self.consensus_dirpath = consensus_dirpath
+        self.n_threads = n_threads
+    # end def
+# end class
+
+
+class ConsensMakingArgs:
+    def __init__(
+        self,
+        sample_name,
+        var_call,
+        reference_fpath,
+        outdir_path,
+        n_threads
+    ):
+
+        self.sample_name = sample_name
+        self.var_call = var_call
+        self.reference_fpath = reference_fpath
+        self.outdir_path = outdir_path
         self.n_threads = n_threads
     # end def
 # end class

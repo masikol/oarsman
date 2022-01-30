@@ -6,6 +6,8 @@ from src.runners.kromsatel import run_kromsatel
 from src.runners.bwa import run_bwa
 from src.runners.aln_postprocess import run_aln_postprocess
 from src.runners.bcftools_var_call import run_bcftools_var_call
+from src.runners.var_call_postprocess import run_var_vall_postprocess
+from src.runners.consensus_making import make_consensus
 from src.runners.highlighter import run_highlighter
 
 
@@ -167,7 +169,6 @@ def _create_consensus_seq(mapping,
                           oarsman_args,
                           oarsman_dependencies,
                           sample):
-    print('Making consensus...')
     var_call_args = oarsman_args.get_var_call_args(
         sample.name,
         mapping.alignment_fpath
@@ -175,9 +176,35 @@ def _create_consensus_seq(mapping,
     var_call_dependencies = \
         oarsman_dependencies.get_bcftools_dependencies()
 
-    consensus_seq = run_bcftools_var_call(
+    raw_var_call = run_bcftools_var_call(
         var_call_args,
         var_call_dependencies
+    )
+
+    var_call_postproc_args = oarsman_args.get_var_call_postproc_args(
+        sample.name,
+        raw_var_call
+    )
+    var_call_postproc_dependencies = \
+        oarsman_dependencies.get_bcftools_dependencies()
+
+    var_call = run_var_vall_postprocess(
+        var_call_postproc_args,
+        var_call_postproc_dependencies
+    )
+
+    print('Making consensus...')
+
+    make_consensus_args = oarsman_args.get_make_consensus_args(
+        sample.name,
+        var_call
+    )
+    make_consensus_dependencies = \
+        oarsman_dependencies.get_bcftools_dependencies()
+
+    consensus_seq = make_consensus(
+        make_consensus_args,
+        make_consensus_dependencies
     )
 
     print(f'The consensus is created: `{consensus_seq.file_path}`')
