@@ -1,7 +1,7 @@
 
 import os
 
-from src.runners.shell import launch_command
+from src.shell import launch_command
 
 from src.arguments import CallVariantsArguments
 from src.dependencies import BcfVarCallDependencies

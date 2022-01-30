@@ -6,7 +6,7 @@ import os
 import re
 
 from src.fatal_errors import FatalError
-from src.runners.shell import launch_command_get_stdout
+from src.shell import launch_command_get_stdout
 
 
 def check_kromsatel_version(kromsatel_fpath):

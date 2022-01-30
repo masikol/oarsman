@@ -1,7 +1,7 @@
 
 import os
 
-from src.runners.shell import launch_command
+from src.shell import launch_command
 
 from src.data_transfer_objects import SequenceFile
 from src.arguments import ConsensAnnotArguments

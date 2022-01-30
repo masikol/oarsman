@@ -2,11 +2,11 @@
 from src.parse_arguments import parse_arguments
 from src.seq_sample import Sample
 
-from src.runners.kromsatel_runner import run_kromsatel
-from src.runners.bwa_runner import run_bwa
-from src.runners.aln_postprocess_runner import run_aln_postprocess
-from src.runners.bcftools_var_call_runner import run_bcftools_var_call
-from src.runners.highlighter_runner import run_highlighter
+from src.runners.kromsatel import run_kromsatel
+from src.runners.bwa import run_bwa
+from src.runners.aln_postprocess import run_aln_postprocess
+from src.runners.bcftools_var_call import run_bcftools_var_call
+from src.runners.highlighter import run_highlighter
 
 
 def run_pipeline():

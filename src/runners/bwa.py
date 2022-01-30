@@ -4,7 +4,7 @@ import os
 import src.filesystem as fs
 from src.input_modes import InputModes
 from src.fatal_errors import FatalError
-from src.runners.shell import launch_command
+from src.shell import launch_command
 
 from src.data_transfer_objects import BwaSeqIndex, ReadMapping
 from src.arguments import ReadMappingArguments

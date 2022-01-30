@@ -2,7 +2,7 @@
 import os
 import sys
 
-from src.runners.shell import launch_command
+from src.shell import launch_command
 
 from src.data_transfer_objects import ReadMapping, AlignmentIndex
 from src.arguments import AlnPostprocessArguments
