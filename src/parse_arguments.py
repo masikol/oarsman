@@ -262,9 +262,10 @@ def _check_files_existance(file_path_collection):
 def _check_paired_reads(frw_fpath_collections, rvr_fpath_collections):
 
     if len(frw_fpath_collections) != len(rvr_fpath_collections):
-        error_msg = '\nError: the number of samples having forward reads ({} samples)\n' \
-            ' is not equal to the number of samples having reverse reads ({} samples).' \
-            'Tip: you cannot mix paired-end and unpaired libraries during a single oarsman run.'
+        error_msg = '\nError: the number of samples having forward reads ({} samples) ' \
+            ' is not equal to the number of samples having reverse reads ({} samples).\n' \
+            'Sorty, you cannot mix paired-end and unpaired libraries during a single oarsman run.' \
+                .format(len(frw_fpath_collections), len(rvr_fpath_collections))
         raise FatalError(error_msg)
     # end if
 

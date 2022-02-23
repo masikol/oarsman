@@ -40,7 +40,8 @@ class OarsmanDependencies:
 
     def get_bwa_dependencies(self):
         return BwaDependencies(
-            self.bwa_fpath
+            self.bwa_fpath,
+            self.samtools_fpath
         )
     # end def
 
@@ -88,8 +89,9 @@ class KromsatelDependencies:
 
 class BwaDependencies:
 
-    def __init__(self, bwa_fpath):
+    def __init__(self, bwa_fpath, samtools_fpath):
         self.bwa_fpath = bwa_fpath
+        self.samtools_fpath = samtools_fpath
     # end def
 # end class
 

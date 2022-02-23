@@ -119,26 +119,23 @@ def _map_paired_reads(mapping_args, dependencies, reference_index):
     )
     launch_command(command_str, 'bwa mem')
 
+    unpaired_reads_fpaths = (
+        mapping_args.reads.reads_frw_upr_fpaths,
+        mapping_args.reads.reads_rvr_upr_fpaths,
+    )
 
-    # TODO: map unpaired reads as well. Problem: unable to process merged SAM files further (SAM headers)
-    # unpaired_reads_fpaths = (
-    #     mapping_args.reads.reads_frw_upr_fpaths,
-    #     mapping_args.reads.reads_rvr_upr_fpaths,
-    # )
-
-    # print('Mapping the unpaired reads...')
-    # for reads_fpath in unpaired_reads_fpaths:
-    #     command_str = _configure_bwa_unpaired_command(
-    #         reads_fpath,
-    #         reference_index,
-    #         mapping_args,
-    #         dependencies,
-    #         sam_outfpath,
-    #         append=True
-    #     )
-    #     launch_command(command_str)
-    # # end def
-    # print('done.')
+    print('Mapping the unpaired reads...')
+    for reads_fpath in unpaired_reads_fpaths:
+        command_str = _configure_bwa_unpaired_command(
+            reads_fpath,
+            reference_index,
+            mapping_args,
+            dependencies,
+            sam_outfpath,
+            append=True
+        )
+        launch_command(command_str, 'bwa mem')
+    # end def
 
     return ReadMapping(sam_outfpath)
 # end def
@@ -154,7 +151,9 @@ def _configure_bwa_unpaired_command(reads_fpath,
     index_fpath = reference_index.index_base_fpath
 
     if append:
-        output_cmd_part = '>> {}'.format(sam_outfpath)
+        # Omit SAM header and append
+        output_cmd_part = '| {} view >> {}' \
+            .format(dependencies.samtools_fpath, sam_outfpath)
     else:
         output_cmd_part = '-o {}'.format(sam_outfpath)
     # end if
