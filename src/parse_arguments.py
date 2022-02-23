@@ -273,9 +273,11 @@ def _check_paired_reads(frw_fpath_collections, rvr_fpath_collections):
         rvr_fpath_collections
     )
     sample_number = 1
+
     for frw_fpaths, rvr_fpaths in frw_rvr_zip:
+
         if len(frw_fpaths) != len(rvr_fpaths):
-            error_msg = 'Invalid number of input files of reads for the sample ' \
+            error_msg = '\nError: Invalid number of input files of reads for the sample ' \
                 'with ordinal number {}.\n' \
                 'Forward-read files ({} files): {}.\n' \
                 'Reverse-read files ({} files): {}.\n' \
@@ -288,8 +290,29 @@ def _check_paired_reads(frw_fpath_collections, rvr_fpath_collections):
                 )
             raise FatalError(error_msg)
         # end if
+
+        _check_if_R1_and_R2_are_not_same_file(
+            frw_fpaths,
+            rvr_fpaths,
+            sample_number
+        )
+
         sample_number += 1
     # end for
+# end def
+
+
+def _check_if_R1_and_R2_are_not_same_file(frw_fpaths, rvr_fpaths, sample_number):
+    for frw_fpath, rvr_fpath in zip(frw_fpaths, rvr_fpaths):
+        if frw_fpath == rvr_fpath:
+            error_msg = '\nError: the file of forward (R1) reads and ' \
+                'the file of reverse (R2) reads ' \
+                'of the sample with ordinal number {} ' \
+                'are the same file:\n' \
+                '  `{}`'.format(sample_number, frw_fpath)
+            raise FatalError(error_msg)
+        # end if
+    # end if
 # end def
 
 

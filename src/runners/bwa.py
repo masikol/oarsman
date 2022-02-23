@@ -118,7 +118,6 @@ def _map_paired_reads(mapping_args, dependencies, reference_index):
         sam_outfpath
     )
     launch_command(command_str, 'bwa mem')
-    print('done.')
 
 
     # TODO: map unpaired reads as well. Problem: unable to process merged SAM files further (SAM headers)

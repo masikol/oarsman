@@ -15,7 +15,7 @@ from src.data_transfer_objects import VariantCall, ReadMapping, VariantCallIndex
 
 def run_lofreq_var_call(args, dependencies):
 
-    print('Performing viterbi realignment, which corrects mapping errors...')
+    print('Performing Viterbi realignment, which corrects mapping errors...')
     realigned_alignment = _viterbi_realignment(args, dependencies)
     realigned_alignment.check_existance()
 
@@ -24,7 +24,7 @@ def run_lofreq_var_call(args, dependencies):
     indelqualed_alignment.check_existance()
     realigned_alignment.cleanup()
 
-    print('Sorting acquired BAM file...')
+    print('Sorting realigned BAM file...')
     indelqualed_sorted_alignment = _sort_bam(args, dependencies, indelqualed_alignment)
     indelqualed_sorted_alignment.check_existance()
     indelqualed_alignment.cleanup()

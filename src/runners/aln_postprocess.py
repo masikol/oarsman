@@ -27,14 +27,13 @@ def run_aln_postprocess(args, dependencies):
 
 
 def _convert_sam2bam(postproc_args, dependencies):
+
     bam_outfpath = _configure_bam_outfpath(postproc_args)
-    print(
-        'Converting SAM to BAM (`{}` -> `{}`)...' \
-            .format(
-                postproc_args.raw_mapping.alignment_fpath,
-                bam_outfpath
-            )
+    _print_converting_status_message(
+        postproc_args.raw_mapping.alignment_fpath,
+        bam_outfpath
     )
+
     command = _configure_sam2bam_command(
         postproc_args,
         dependencies,
@@ -56,6 +55,16 @@ def _configure_bam_outfpath(postproc_args):
         )
     )
     return bam_outfpath
+# end def
+
+
+def _print_converting_status_message(sam_fpath, bam_fpath):
+    sam_basename = os.path.basename(sam_fpath)
+    bam_basename = os.path.basename(bam_fpath)
+    print(
+        'Converting SAM to BAM (`{}` -> `{}`)...' \
+            .format(sam_basename, bam_basename)
+    )
 # end def
 
 
@@ -87,7 +96,7 @@ def _sort_bam(bam_mapping, postproc_args, dependencies):
     )
     print(
         'Sorting BAM (`{}`)...' \
-            .format(bam_mapping.alignment_fpath)
+            .format(os.path.basename(bam_mapping.alignment_fpath))
     )
     command = _configure_sort_bam_command(
         postproc_args,
@@ -136,7 +145,7 @@ def _configure_sort_bam_command(postproc_args,
 def _index_bam(sorted_bam_mapping, postproc_args, dependencies):
     print(
         'Indexing BAM (`{}`)...' \
-            .format(sorted_bam_mapping.alignment_fpath)
+            .format(os.path.basename(sorted_bam_mapping.alignment_fpath))
     )
     command = _configure_index_bam_command(
         postproc_args,

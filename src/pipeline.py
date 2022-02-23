@@ -72,6 +72,7 @@ def run_pipeline():
         )
 
         print('Annotated consensus: `{}`'.format(consensus_annotation.file_path))
+        print('-' * 40)
     # end for
 # end def
 
@@ -87,6 +88,7 @@ def _clean_reads(oarsman_args, oarsman_dependencies, sample):
         kromsatel_arguments,
         kromsatel_dependencies
     )
+    print() # separate kromsatel stdout from further stdout
 
     return kromsatel_result
 # end def
