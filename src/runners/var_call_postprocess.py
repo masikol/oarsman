@@ -1,5 +1,6 @@
 
 import os
+from math import log
 
 from src.shell import launch_command
 
@@ -138,12 +139,14 @@ def _configure_filter_command(postproc_args,
     # indel_gap = 10
     # spn_gap = 1
 
+    min_variant_qual = -10.0 * log(postproc_args.freq_threshold, 10)
+
     command = ' '.join(
         [
             dependencies.bcftools_fpath, 'filter',
             '-Ob',
             f'--threads {postproc_args.n_threads}',
-            f"-e '%QUAL<{postproc_args.min_variant_qual}'",
+            f"-e '%QUAL<{min_variant_qual}'",
             # f'--IndelGap {indel_gap}',
             # f'--SnpGap {spn_gap}',
             f'-o {outfpath}',

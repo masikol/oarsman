@@ -18,6 +18,7 @@ class OarsmanDependencies:
 
         # Dependencies for variant calling
         self.bcftools_fpath = None
+        self.lofreq_fpath = None
 
         # Depencencies for consensus annnotation
         self.highlighter_fpath = None
@@ -58,6 +59,12 @@ class OarsmanDependencies:
 
     def get_bcftools_dependencies(self):
         return BcfVarCallDependencies(self.bcftools_fpath)
+    # end def
+
+    def get_lofreq_dependencies(self):
+        return LofreqVarCallDependencies(
+            self.lofreq_fpath, self.samtools_fpath, self.bcftools_fpath
+        )
     # end def
 
     def get_highlighter_dependencies(self):
@@ -108,6 +115,16 @@ class SamtoolsDependencies:
 class BcfVarCallDependencies:
 
     def __init__(self, bcftools_fpath):
+        self.bcftools_fpath = bcftools_fpath
+    # end def
+# end class
+
+
+class LofreqVarCallDependencies:
+
+    def __init__(self, lofreq_fpath, samtools_fpath, bcftools_fpath):
+        self.lofreq_fpath = lofreq_fpath
+        self.samtools_fpath = samtools_fpath
         self.bcftools_fpath = bcftools_fpath
     # end def
 # end class

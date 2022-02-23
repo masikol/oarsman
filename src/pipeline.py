@@ -6,6 +6,7 @@ from src.runners.kromsatel import run_kromsatel
 from src.runners.bwa import run_bwa
 from src.runners.aln_postprocess import run_aln_postprocess
 from src.runners.bcftools_var_call import run_bcftools_var_call
+from src.runners.lofreq_var_call import run_lofreq_var_call
 from src.runners.var_call_postprocess import run_var_vall_postprocess
 from src.runners.consensus_making import make_consensus
 from src.runners.highlighter import run_highlighter
@@ -169,29 +170,8 @@ def _create_consensus_seq(mapping,
                           oarsman_args,
                           oarsman_dependencies,
                           sample):
-    var_call_args = oarsman_args.get_var_call_args(
-        sample.name,
-        mapping.alignment_fpath
-    )
-    var_call_dependencies = \
-        oarsman_dependencies.get_bcftools_dependencies()
 
-    raw_var_call = run_bcftools_var_call(
-        var_call_args,
-        var_call_dependencies
-    )
-
-    var_call_postproc_args = oarsman_args.get_var_call_postproc_args(
-        sample.name,
-        raw_var_call
-    )
-    var_call_postproc_dependencies = \
-        oarsman_dependencies.get_bcftools_dependencies()
-
-    var_call = run_var_vall_postprocess(
-        var_call_postproc_args,
-        var_call_postproc_dependencies
-    )
+    var_call = _call_variants(mapping, oarsman_args, oarsman_dependencies, sample)
 
     print('Making consensus...')
 
@@ -210,6 +190,53 @@ def _create_consensus_seq(mapping,
     print(f'The consensus is created: `{consensus_seq.file_path}`')
 
     return consensus_seq
+# end def
+
+
+def _call_variants(mapping,
+                   oarsman_args,
+                   oarsman_dependencies,
+                   sample):
+
+    if oarsman_dependencies.lofreq_fpath is None:
+        var_call_args = oarsman_args.get_var_call_args(
+            sample.name,
+            mapping.alignment_fpath
+        )
+        var_call_dependencies = \
+            oarsman_dependencies.get_bcftools_dependencies()
+
+        raw_var_call = run_bcftools_var_call(
+            var_call_args,
+            var_call_dependencies
+        )
+
+        var_call_postproc_args = oarsman_args.get_var_call_postproc_args(
+            sample.name,
+            raw_var_call
+        )
+        var_call_postproc_dependencies = \
+            oarsman_dependencies.get_bcftools_dependencies()
+
+        var_call = run_var_vall_postprocess(
+            var_call_postproc_args,
+            var_call_postproc_dependencies
+        )
+    else:
+        var_call_args = oarsman_args.get_var_call_args(
+            sample.name,
+            mapping.alignment_fpath
+        )
+        var_call_dependencies = \
+            oarsman_dependencies.get_lofreq_dependencies()
+
+        var_call = run_lofreq_var_call(
+            var_call_args,
+            var_call_dependencies
+        )
+    # end if
+
+    return var_call
 # end def
 
 

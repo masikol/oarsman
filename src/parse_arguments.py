@@ -97,6 +97,12 @@ def parse_arguments():
         required=False
     )
 
+    parser.add_argument(
+        '--lofreq',
+        help='path to lofreq executable',
+        required=False
+    )
+
     # Misc
 
     parser.add_argument(
@@ -360,49 +366,64 @@ def _configure_oarsman_dependencies(argparse_args):
     errors = list()
 
     oarsman_dependencies.kromsatel_fpath = \
-        _get_dependency_fpath_script(
+        _get_dependency(
             argparse_args.kromsatel,
             'kromsatel.py',
-            errors
+            errors,
+            binary=False
         )
 
     oarsman_dependencies.highlighter_fpath = \
-        _get_dependency_fpath_script(
+        _get_dependency(
             argparse_args.highlighter,
             'consensus-highlighter.py',
-            errors
+            errors,
+            binary=False
         )
 
     oarsman_dependencies.bwa_fpath = \
-        _get_dependency_fpath_binary(
+        _get_dependency(
             argparse_args.bwa,
             'bwa',
             errors
         )
 
     oarsman_dependencies.samtools_fpath = \
-        _get_dependency_fpath_binary(
+        _get_dependency(
             argparse_args.samtools,
             'samtools',
             errors
         )
 
     oarsman_dependencies.bcftools_fpath = \
-        _get_dependency_fpath_binary(
+        _get_dependency(
             argparse_args.bcftools,
             'bcftools',
             errors
         )
 
+    oarsman_dependencies.lofreq_fpath = \
+        _get_dependency(
+            argparse_args.lofreq,
+            'lofreq',
+            errors,
+            search_in_PATH=False,
+            required=False
+        )
+
     _check_blastplus_in_path(oarsman_dependencies, errors)
+    _check_var_call_dependencies(oarsman_dependencies, errors)
 
     return oarsman_dependencies, errors
 # end def
 
 
-def _get_dependency_fpath_binary(argparse_dependency_arg,
-                                 executable_name,
-                                 errors):
+def _get_dependency(argparse_dependency_arg,
+                    executable_name,
+                    errors,
+                    binary=True,
+                    search_in_PATH=True,
+                    required=True):
 
     dependency_passed_with_cmd = not argparse_dependency_arg is None
     dependency_fpath = argparse_dependency_arg
@@ -411,24 +432,72 @@ def _get_dependency_fpath_binary(argparse_dependency_arg,
         dependency_fpath = os.path.abspath(dependency_fpath)
         if not os.path.exists(dependency_fpath):
             errors.append('File `{}` does not exist'.format(dependency_fpath))
-        elif not os.access(dependency_fpath, os.X_OK):
+        elif binary and not _is_executable(dependency_fpath):
             errors.append('File `{}` is not executable ' \
                 '(please change permissions for it)'.format(dependency_fpath))
         # end if
-    else:
-        dependency_in_path = fs.util_is_in_path(executable_name)
-        if dependency_in_path:
-            dependency_fpath = executable_name
-        else:
-            errors.append(
-                'Cannot find {} executable in the PATH environment variable' \
-                    .format(executable_name)
-            )
-        # end if
+    elif search_in_PATH:
+        dependency_fpath = _check_in_path(executable_name, errors, required)
     # end if
 
     return dependency_fpath
 # end def
+
+
+def _is_executable(file_path):
+    return os.access(file_path, os.X_OK)
+# end def
+
+
+def _check_in_path(executable_name,
+                   errors,
+                   required=True):
+    dependency_fpath = None
+    dependency_in_path = fs.util_is_in_path(executable_name)
+
+    if dependency_in_path:
+        dependency_fpath = executable_name
+    elif required:
+        errors.append(
+            'Cannot find {} executable in the PATH environment variable' \
+                .format(executable_name)
+        )
+    # end if
+
+    return dependency_fpath
+# end def
+
+
+# def _get_dependency_fpath_binary(argparse_dependency_arg,
+#                                  executable_name,
+#                                  errors,
+#                                  required=True):
+
+#     dependency_passed_with_cmd = not argparse_dependency_arg is None
+#     dependency_fpath = argparse_dependency_arg
+
+#     if dependency_passed_with_cmd:
+#         dependency_fpath = os.path.abspath(dependency_fpath)
+#         if not os.path.exists(dependency_fpath):
+#             errors.append('File `{}` does not exist'.format(dependency_fpath))
+#         elif not os.access(dependency_fpath, os.X_OK):
+#             errors.append('File `{}` is not executable ' \
+#                 '(please change permissions for it)'.format(dependency_fpath))
+#         # end if
+#     else:
+#         dependency_in_path = fs.util_is_in_path(executable_name)
+#         if dependency_in_path:
+#             dependency_fpath = executable_name
+#         elif required:
+#             errors.append(
+#                 'Cannot find {} executable in the PATH environment variable' \
+#                     .format(executable_name)
+#             )
+#         # end if
+#     # end if
+
+#     return dependency_fpath
+# # end def
 
 
 def _get_dependency_fpath_script(argparse_dependency_arg,
@@ -476,3 +545,16 @@ def _check_blastplus_in_path(oarsman_dependencies, errors):
         # end if
     # end for
 # end def
+
+
+def _check_var_call_dependencies(oarsman_dependencies, errors):
+
+    only_lofreq_available = oarsman_dependencies.bcftools_fpath is None \
+                            and oarsman_dependencies.lofreq_fpath is None
+
+    if only_lofreq_available:
+        errors.append(
+            'Error: lofreq is available, but bcftools is not. Please, install bcftools.'
+        )
+    # end if
+# end if

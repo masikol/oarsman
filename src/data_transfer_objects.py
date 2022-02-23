@@ -181,6 +181,10 @@ class VariantCall(DataTransferObject):
             raise FatalError(error_msg)
         # end if
     # end def
+
+    def cleanup(self):
+        fs.rm_file(self.var_call_fpath)
+    # end def
 # end class
 
 

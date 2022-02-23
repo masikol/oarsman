@@ -8,7 +8,6 @@ from src.data_transfer_objects import SequenceFile
 
 def make_consensus(args, dependencies):
 
-    print('Making consensus...')
     consensus_seq = _run_consensus_making(
         args,
         dependencies

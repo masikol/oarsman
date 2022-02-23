@@ -25,7 +25,7 @@ class OarsmanArguments:
         self.kromsatel_args = ''
 
         # Variant calling
-        self.min_variant_qual = 20 # in Phred scale
+        self.freq_threshold = 0.5
 
         # Annotation
         low_coverages_int = (10,)
@@ -150,6 +150,7 @@ class OarsmanArguments:
             sample_name,
             alignment_fpath,
             self.reference_fpath,
+            self.freq_threshold,
             os.path.join(self.outdir_path, self.variant_calls_dirname),
             self.n_threads
         )
@@ -160,7 +161,7 @@ class OarsmanArguments:
             sample_name,
             raw_var_call,
             self.reference_fpath,
-            self.min_variant_qual,
+            self.freq_threshold,
             os.path.join(self.outdir_path, self.consensus_dirname),
             self.n_threads
         )
@@ -272,6 +273,7 @@ class CallVariantsArguments:
         sample_name,
         alignment_fpath,
         reference_fpath,
+        freq_threshold,
         outdir_path,
         n_threads
     ):
@@ -279,6 +281,7 @@ class CallVariantsArguments:
         self.sample_name = sample_name
         self.alignment_fpath = alignment_fpath
         self.reference_fpath = reference_fpath
+        self.freq_threshold = freq_threshold
         self.outdir_path = outdir_path
         self.n_threads = n_threads
     # end def
@@ -292,7 +295,7 @@ class VarCallPostprocArgs:
         sample_name,
         raw_var_call,
         reference_fpath,
-        min_variant_qual,
+        freq_threshold,
         outdir_path,
         n_threads
     ):
@@ -300,7 +303,7 @@ class VarCallPostprocArgs:
         self.sample_name = sample_name
         self.raw_var_call = raw_var_call
         self.reference_fpath = reference_fpath
-        self.min_variant_qual = min_variant_qual
+        self.freq_threshold = freq_threshold
         self.outdir_path = outdir_path
         self.n_threads = n_threads
     # end def

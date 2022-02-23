@@ -148,6 +148,13 @@ def rm_file(fpath):
 # end def
 
 
+def rm_if_exists(fpath):
+    if os.path.exists(fpath):
+        rm_file(fpath)
+    # end if
+# end def
+
+
 def append_file_to_file(source_fpath, dest_fpath, buffer_size_kbytes=512):
 
     kbyte_size = 1024 # bytes
