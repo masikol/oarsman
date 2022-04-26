@@ -35,7 +35,8 @@ def _configure_highlighter_command(highlighter_args, dependencies):
             f'-f {highlighter_args.seq_fpath}',
             f'-b {highlighter_args.mapping.alignment_fpath}',
             f'-o {highlighter_args.outfpath}',
-            '-c {}'.format(','.join(highlighter_args.low_coverages))
+            highlighter_args.advanced_args
+            # '-c {}'.format(','.join(highlighter_args.low_coverages))
         ]
     )
 

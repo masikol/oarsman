@@ -2,7 +2,7 @@
 
 Oarsman (**O**verlapping **A**mplicons, **R**eference) is a pipeline for obtaining consensus genome sequences from overlapping amplicon data using a reference genome sequence.
 
-Current version is 0.2.e (2022-02-23 edition).
+Current version is 0.2.f (2022-04-26 edition).
 
 ## Description
 
@@ -135,4 +135,35 @@ python3 oarsman.py \
     -t 4 \
     -o my_outdir \
     --lofreq /home/user/Sotf/lofreq_star-2.1.2/bin/lofreq
+```
+
+### Custom options for consensus-highlighter
+
+You can pass additional options for [consensus-highlighter](https://github.com/masikol/consensus-highlighter) with option `--highlighter-args`. The options should be surrounded by quotation marks (see Example below).
+
+**Beware:** Oarsman does not check these options, simply passes them to the highlighter.
+
+With that said:
+
+- you may specify the following options: `-c/--coverage-thresholds`, `-n/--no-zero-output`, `--circular`, `--organism`;
+- do not specify the following highlighter options with `--highlighter-args`: `-f/--target-fasta`, `-b/--bam`, `-o/--outfile`.
+
+#### Example
+
+```
+python3 oarsman.py \
+    -1 20_S30_L001_R1_001.fastq.gz \
+    -2 20_S30_L001_R2_001.fastq.gz \
+    -p nCov-2019-alt_primers.csv \
+    -r Wuhan-Hu-1-compele-genome.fasta \
+    -t 4 \
+    -o my_outdir \
+    --highlighter-args '-c 5,8 --organism Sabaka -n --circular'
+```
+
+If your desired organism name contains spaces, just use double quotes:
+
+```
+... \
+    --highlighter-args '-c 5,8 --organism "Sabaka dvorii" -n --circular'
 ```

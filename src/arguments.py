@@ -24,17 +24,11 @@ class OarsmanArguments:
         # Arguments for kromsatel
         self.kromsatel_args = ''
 
+        # Arguments for highlighter
+        self.highlighter_args = ''
+
         # Variant calling
         self.freq_threshold = 0.5
-
-        # Annotation
-        low_coverages_int = (10,)
-        self.low_coverages = tuple(
-            map(
-                str,
-                low_coverages_int
-            )
-        )
 
         # Misc
         self.outdir_path = os.path.join(os.getcwd(), 'oarsman_outdir')
@@ -186,10 +180,10 @@ class OarsmanArguments:
         )
 
         return ConsensAnnotArguments(
+            self,
             sample_name,
             seq_fpath,
             mapping,
-            self.low_coverages,
             outfpath
         )
     # end def
@@ -219,14 +213,12 @@ class KromsatelArguments:
 
 class ReadMappingArguments:
 
-    def __init__(
-        self,
-        oarsman_args,
-        sample_name,
-        reads,
-        reference_seq_fpath,
-        output_suffix
-    ):
+    def __init__(self,
+                 oarsman_args,
+                 sample_name,
+                 reads,
+                 reference_seq_fpath,
+                 output_suffix):
 
         self.sample_name = sample_name
         self.reads = reads
@@ -248,14 +240,12 @@ class ReadMappingArguments:
 
 class AlnPostprocessArguments:
 
-    def __init__(
-        self,
-        sample_name,
-        raw_mapping,
-        reference_fpath,
-        n_threads,
-        output_suffix
-    ):
+    def __init__(self,
+                 sample_name,
+                 raw_mapping,
+                 reference_fpath,
+                 n_threads,
+                 output_suffix):
 
         self.sample_name = sample_name
         self.raw_mapping = raw_mapping
@@ -268,15 +258,13 @@ class AlnPostprocessArguments:
 
 class CallVariantsArguments:
 
-    def __init__(
-        self,
-        sample_name,
-        alignment_fpath,
-        reference_fpath,
-        freq_threshold,
-        outdir_path,
-        n_threads
-    ):
+    def __init__(self,
+                 sample_name,
+                 alignment_fpath,
+                 reference_fpath,
+                 freq_threshold,
+                 outdir_path,
+                 n_threads):
 
         self.sample_name = sample_name
         self.alignment_fpath = alignment_fpath
@@ -290,15 +278,13 @@ class CallVariantsArguments:
 
 class VarCallPostprocArgs:
 
-    def __init__(
-        self,
-        sample_name,
-        raw_var_call,
-        reference_fpath,
-        freq_threshold,
-        outdir_path,
-        n_threads
-    ):
+    def __init__(self,
+                 sample_name,
+                 raw_var_call,
+                 reference_fpath,
+                 freq_threshold,
+                 outdir_path,
+                 n_threads):
 
         self.sample_name = sample_name
         self.raw_var_call = raw_var_call
@@ -311,14 +297,12 @@ class VarCallPostprocArgs:
 
 
 class ConsensMakingArgs:
-    def __init__(
-        self,
-        sample_name,
-        var_call,
-        reference_fpath,
-        outdir_path,
-        n_threads
-    ):
+    def __init__(self,
+                 sample_name,
+                 var_call,
+                 reference_fpath,
+                 outdir_path,
+                 n_threads):
 
         self.sample_name = sample_name
         self.var_call = var_call
@@ -331,11 +315,16 @@ class ConsensMakingArgs:
 
 class ConsensAnnotArguments:
 
-    def __init__(self, sample_name, seq_fpath, mapping, low_coverages, outfpath):
+    def __init__(self,
+                 oarsman_args,
+                 sample_name,
+                 seq_fpath,
+                 mapping,
+                 outfpath):
         self.sample_name = sample_name
         self.seq_fpath = seq_fpath
         self.mapping = mapping
-        self.low_coverages = low_coverages
         self.outfpath = outfpath
+        self.advanced_args = oarsman_args.highlighter_args
     # end def
 # end class

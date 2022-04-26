@@ -65,6 +65,14 @@ def parse_arguments():
         required=False
     )
 
+    # highlighter arguments
+
+    parser.add_argument(
+        '--highlighter-args',
+        help='argument string for highlighter',
+        required=False
+    )
+
     # Dependencies
 
     parser.add_argument(
@@ -170,6 +178,11 @@ def _configure_oarsman_args(argparse_args):
     # Set advanced kromsatel args
     if not argparse_args.kromsatel_args is None:
         oarsman_args.kromsatel_args = argparse_args.kromsatel_args
+    # end if
+
+    # Set advanced highlighter args
+    if not argparse_args.highlighter_args is None:
+        oarsman_args.highlighter_args = argparse_args.highlighter_args
     # end if
 
     oarsman_args.n_threads = _get_n_threads(
